@@ -7,7 +7,7 @@ import urllib.error
 from system.sim.models import PhaseResult
 
 
-LLM_API_URL = "https://api.openai.com/v1/chat/completions"
+LLM_API_URL = "https://api.anthropic.com/v1/messages"
 
 SYSTEM_PROMPT = """Tu es le narrateur d'une société algorithmique simulée.
 Tu décris l'évolution d'une population d'agents numériques à travers des phases de développement.
@@ -34,25 +34,24 @@ def generate_narrative(config, context, docs, mock=False, no_llm=False):
     if no_llm:
         return _simple_narrative(context)
 
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not api_key:
-        print("OPENAI_API_KEY non définie, utilisation du mode simple.")
+        print("ANTHROPIC_API_KEY non définie, utilisation du mode simple.")
         return _simple_narrative(context)
 
-    model = os.environ.get("OPENAI_MODEL_MAIN",
-             os.environ.get("OPENAI_MODEL",
-              config.get("llm", {}).get("model", "gpt-5.2")))
+    model = os.environ.get("ANTHROPIC_MODEL",
+              config.get("llm", {}).get("model", "claude-sonnet-4-20250514"))
     temperature = config.get("llm", {}).get("temperature", 0.7)
-    max_tokens = config.get("llm", {}).get("max_completion_tokens", 700)
+    max_tokens = config.get("llm", {}).get("max_tokens", 700)
 
     user_content = _build_user_prompt(context, docs)
 
     payload = {
         "model": model,
+        "max_tokens": max_tokens,
         "temperature": temperature,
-        "max_completion_tokens": max_tokens,
+        "system": SYSTEM_PROMPT,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
     }
@@ -64,14 +63,15 @@ def generate_narrative(config, context, docs, mock=False, no_llm=False):
             data=data,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
             },
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             result = json.loads(resp.read().decode("utf-8"))
 
-        content = result["choices"][0]["message"]["content"]
+        content = result["content"][0]["text"]
         return _parse_llm_response(content, context)
 
     except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError) as e:
