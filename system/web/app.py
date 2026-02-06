@@ -1,4 +1,4 @@
-"""Minimal web server for AGENCY simulation dashboard."""
+"""Web server for AGENCY simulation — full terminal interface."""
 import json
 import os
 import subprocess
@@ -9,17 +9,85 @@ import uuid
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-HOST = "127.0.0.1"
+HOST = "0.0.0.0"
 PORT = 8765
 
 # Job storage
 _jobs = {}
 _jobs_lock = threading.Lock()
 
+# Terminal session storage
+_terminals = {}
+_terminals_lock = threading.Lock()
+
 # Default paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_OUTPUT_DIR = os.path.join(os.path.dirname(BASE_DIR), "experience", "Test1", "phases")
+PROJECT_DIR = os.path.dirname(BASE_DIR)
+DEFAULT_OUTPUT_DIR = os.path.join(PROJECT_DIR, "experience", "Test1", "phases")
 DEFAULT_DATA_DIR = os.path.join(BASE_DIR, "data")
+
+
+class TerminalSession:
+    """A persistent terminal session with command history."""
+
+    def __init__(self, cwd=None):
+        self.cwd = cwd or PROJECT_DIR
+        self.history = []
+        self.lock = threading.Lock()
+
+    def execute(self, command):
+        """Execute a command and return output."""
+        with self.lock:
+            try:
+                env = dict(os.environ)
+                env["PYTHONUNBUFFERED"] = "1"
+                env["TERM"] = "dumb"
+                proc = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self.cwd,
+                    env=env,
+                    text=True,
+                )
+                output, _ = proc.communicate(timeout=120)
+                # Handle cd commands
+                if command.strip().startswith("cd "):
+                    target = command.strip()[3:].strip().strip('"').strip("'")
+                    if target == "~":
+                        target = os.path.expanduser("~")
+                    new_dir = os.path.join(self.cwd, target) if not os.path.isabs(target) else target
+                    new_dir = os.path.realpath(new_dir)
+                    if os.path.isdir(new_dir):
+                        self.cwd = new_dir
+
+                entry = {
+                    "command": command,
+                    "output": output,
+                    "return_code": proc.returncode,
+                    "cwd": self.cwd,
+                    "timestamp": time.strftime("%H:%M:%S"),
+                }
+                self.history.append(entry)
+                return entry
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                return {
+                    "command": command,
+                    "output": "[Commande interrompue: timeout 120s]",
+                    "return_code": -1,
+                    "cwd": self.cwd,
+                    "timestamp": time.strftime("%H:%M:%S"),
+                }
+            except Exception as e:
+                return {
+                    "command": command,
+                    "output": f"Erreur: {e}",
+                    "return_code": -1,
+                    "cwd": self.cwd,
+                    "timestamp": time.strftime("%H:%M:%S"),
+                }
 
 
 class SimHandler(BaseHTTPRequestHandler):
@@ -62,7 +130,7 @@ class SimHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
@@ -79,6 +147,14 @@ class SimHandler(BaseHTTPRequestHandler):
         elif path.startswith("/api/jobs/"):
             job_id = path.split("/")[-1]
             self._api_job_detail(job_id)
+        elif path == "/api/browse":
+            self._api_browse(parse_qs(parsed.query))
+        elif path == "/api/file":
+            self._api_read_file(parse_qs(parsed.query))
+        elif path == "/api/config":
+            self._api_get_config()
+        elif path == "/api/modalities":
+            self._api_get_modalities()
         elif path.startswith("/files/"):
             self._serve_file(path[7:])
         else:
@@ -93,10 +169,12 @@ class SimHandler(BaseHTTPRequestHandler):
             self._api_simulate()
         elif path == "/api/test":
             self._api_test()
-        elif path == "/api/pick-directory":
-            self._api_pick_directory()
         elif path == "/api/validate":
             self._api_validate()
+        elif path == "/api/terminal/exec":
+            self._api_terminal_exec()
+        elif path == "/api/file/save":
+            self._api_save_file()
         else:
             self.send_response(404)
             self.end_headers()
@@ -112,7 +190,7 @@ class SimHandler(BaseHTTPRequestHandler):
     def _api_outputs(self, params):
         output_dir = params.get("dir", [DEFAULT_OUTPUT_DIR])[0]
         if not os.path.isdir(output_dir):
-            self._send_json({"files": []})
+            self._send_json({"files": [], "output_dir": output_dir})
             return
         files = []
         for root, dirs, filenames in os.walk(output_dir):
@@ -125,7 +203,7 @@ class SimHandler(BaseHTTPRequestHandler):
         with _jobs_lock:
             jobs = [{"id": jid, "status": j["status"], "started": j["started"]}
                     for jid, j in _jobs.items()]
-        self._send_json({"jobs": jobs})
+        self._send_json({"jobs": sorted(jobs, key=lambda j: j["started"], reverse=True)})
 
     def _api_job_detail(self, job_id):
         with _jobs_lock:
@@ -142,7 +220,6 @@ class SimHandler(BaseHTTPRequestHandler):
         })
 
     def _serve_file(self, name):
-        # Serve files from default output dir
         fpath = os.path.join(DEFAULT_OUTPUT_DIR, name)
         if not os.path.isfile(fpath):
             self.send_response(404)
@@ -175,7 +252,6 @@ class SimHandler(BaseHTTPRequestHandler):
                 "return_code": None,
             }
 
-        # Build command
         cmd = [sys.executable, "-m", "system.sim", "run",
                "--output-dir", output_dir,
                "--data-dir", data_dir,
@@ -189,7 +265,6 @@ class SimHandler(BaseHTTPRequestHandler):
         if no_llm:
             cmd.append("--no-llm")
 
-        # Set env for file-based validation
         env = dict(os.environ)
         env["SIM_VALIDATE_MODE"] = "file"
         env["SIM_VALIDATE_DIR"] = output_dir
@@ -200,7 +275,7 @@ class SimHandler(BaseHTTPRequestHandler):
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    cwd=os.path.dirname(BASE_DIR),
+                    cwd=PROJECT_DIR,
                     env=env,
                     text=True,
                 )
@@ -240,7 +315,7 @@ class SimHandler(BaseHTTPRequestHandler):
                     [sys.executable, "-m", "unittest", "system.tests.test_simulation", "-v"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    cwd=os.path.dirname(BASE_DIR),
+                    cwd=PROJECT_DIR,
                     text=True,
                 )
                 output = []
@@ -262,22 +337,6 @@ class SimHandler(BaseHTTPRequestHandler):
 
         self._send_json({"job_id": job_id, "status": "running"})
 
-    def _api_pick_directory(self):
-        """Use AppleScript to pick directory (macOS only)."""
-        try:
-            result = subprocess.run(
-                ["osascript", "-e",
-                 'tell application "Finder" to return POSIX path of '
-                 '(choose folder with prompt "Choisir le dossier de sortie")'],
-                capture_output=True, text=True, timeout=30,
-            )
-            if result.returncode == 0:
-                self._send_json({"directory": result.stdout.strip()})
-            else:
-                self._send_json({"error": "Annulé ou non disponible"}, 400)
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            self._send_json({"error": "osascript non disponible (non macOS?)"}, 400)
-
     def _api_validate(self):
         body = self._read_body()
         phase = body.get("phase")
@@ -291,15 +350,132 @@ class SimHandler(BaseHTTPRequestHandler):
             f.write("ok")
         self._send_json({"validated": phase})
 
+    # --- Terminal API ---
+
+    def _api_terminal_exec(self):
+        """Execute a command in the terminal session."""
+        body = self._read_body()
+        command = body.get("command", "").strip()
+        session_id = body.get("session_id", "default")
+
+        if not command:
+            self._send_json({"error": "Commande vide"}, 400)
+            return
+
+        with _terminals_lock:
+            if session_id not in _terminals:
+                _terminals[session_id] = TerminalSession(cwd=PROJECT_DIR)
+            session = _terminals[session_id]
+
+        result = session.execute(command)
+        self._send_json(result)
+
+    # --- File browser API ---
+
+    def _api_browse(self, params):
+        """Browse directory contents."""
+        dir_path = params.get("path", [PROJECT_DIR])[0]
+        if not os.path.isdir(dir_path):
+            self._send_json({"error": "Dossier introuvable", "path": dir_path}, 404)
+            return
+
+        entries = []
+        try:
+            for name in sorted(os.listdir(dir_path)):
+                full = os.path.join(dir_path, name)
+                if name.startswith(".") and name not in (".gitignore",):
+                    continue
+                is_dir = os.path.isdir(full)
+                size = 0
+                if not is_dir:
+                    try:
+                        size = os.path.getsize(full)
+                    except OSError:
+                        pass
+                entries.append({
+                    "name": name,
+                    "is_dir": is_dir,
+                    "size": size,
+                    "path": full,
+                })
+        except PermissionError:
+            self._send_json({"error": "Permission refusée"}, 403)
+            return
+
+        self._send_json({
+            "path": dir_path,
+            "parent": os.path.dirname(dir_path),
+            "entries": entries,
+        })
+
+    def _api_read_file(self, params):
+        """Read a file's content."""
+        file_path = params.get("path", [""])[0]
+        if not file_path or not os.path.isfile(file_path):
+            self._send_json({"error": "Fichier introuvable"}, 404)
+            return
+        try:
+            size = os.path.getsize(file_path)
+            if size > 1_000_000:
+                self._send_json({"error": "Fichier trop volumineux (>1Mo)"}, 400)
+                return
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+            self._send_json({
+                "path": file_path,
+                "content": content,
+                "size": size,
+            })
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _api_save_file(self):
+        """Save content to a file."""
+        body = self._read_body()
+        file_path = body.get("path", "")
+        content = body.get("content", "")
+        if not file_path:
+            self._send_json({"error": "Chemin requis"}, 400)
+            return
+        try:
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            self._send_json({"saved": file_path, "size": len(content)})
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    # --- Config & Modalities API ---
+
+    def _api_get_config(self):
+        """Return current default config."""
+        config_path = os.path.join(BASE_DIR, "config", "defaults.json")
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                self._send_json(json.load(f))
+        except Exception as e:
+            self._send_json({"error": str(e)}, 500)
+
+    def _api_get_modalities(self):
+        """Return all modality definitions."""
+        mod_dir = os.path.join(DEFAULT_DATA_DIR, "modalities")
+        result = {}
+        if os.path.isdir(mod_dir):
+            for fname in sorted(os.listdir(mod_dir)):
+                if fname.endswith(".json"):
+                    with open(os.path.join(mod_dir, fname), "r", encoding="utf-8") as f:
+                        result[fname.replace(".json", "")] = json.load(f)
+        self._send_json(result)
+
 
 def run_server(host=HOST, port=PORT):
     """Start the web server."""
     server = HTTPServer((host, port), SimHandler)
-    print(f"AGENCY Dashboard: http://{host}:{port}")
+    print(f"AGENCY Terminal: http://{host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nArrêt du serveur.")
+        print("\nArret du serveur.")
         server.server_close()
 
 
