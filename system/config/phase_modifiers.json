@@ -1,0 +1,37 @@
+{
+  "1": {
+    "bias": {
+      "obedience": 0.02,
+      "cooperation": 0.02,
+      "creativity": -0.02,
+      "curiosity": -0.02
+    },
+    "extra_noise": {}
+  },
+  "2": {
+    "bias": {
+      "trade": 0.02,
+      "leadership": 0.02,
+      "belief": 0.015,
+      "cooperation": -0.01
+    },
+    "extra_noise": {}
+  },
+  "3": {
+    "bias": {
+      "cooperation": -0.02
+    },
+    "extra_noise": {
+      "belief": 0.05,
+      "ritual": 0.05
+    }
+  },
+  "4": {
+    "bias": {
+      "obedience": 0.02,
+      "ritual": 0.02,
+      "creativity": -0.02
+    },
+    "extra_noise": {}
+  }
+}

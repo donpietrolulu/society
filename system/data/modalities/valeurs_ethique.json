@@ -1,0 +1,11 @@
+{
+  "name": "Valeurs et Ethique",
+  "definition": "Priorites et contraintes d'alignement qui guident les comportements collectifs.",
+  "primitive_application": "Heuristiques locales, garde-fous de risque, sanctions de protocole.",
+  "indicators": ["equite", "solidarite", "respect_regles"],
+  "initial_metrics": {
+    "equite": 0.22,
+    "solidarite": 0.30,
+    "respect_regles": 0.26
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Technique et Infrastructure",
+  "definition": "Capacites d'architecture, memoire et reseaux qui supportent la societe.",
+  "primitive_application": "Noeuds minimaux, outils de verification, liens de reseau fragiles.",
+  "indicators": ["outillage", "habitat", "reseaux"],
+  "initial_metrics": {
+    "outillage": 0.26,
+    "habitat": 0.24,
+    "reseaux": 0.18
+  }
+}

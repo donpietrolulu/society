@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENCY — Tableau de bord</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Courier New', monospace; background: #0a0a0a; color: #d0d0d0; padding: 20px; }
+  h1 { color: #4fc3f7; margin-bottom: 20px; font-size: 1.5em; }
+  h2 { color: #81c784; margin: 15px 0 8px; font-size: 1.1em; }
+  .container { max-width: 900px; margin: 0 auto; }
+  .panel { background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
+  label { display: block; margin: 6px 0 2px; color: #aaa; font-size: 0.85em; }
+  input, select { background: #222; color: #eee; border: 1px solid #444; padding: 6px 10px; border-radius: 3px; width: 100%; font-family: inherit; }
+  input[type="checkbox"] { width: auto; margin-right: 6px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 120px; }
+  button { background: #2e7d32; color: #fff; border: none; padding: 8px 18px; border-radius: 3px; cursor: pointer; font-family: inherit; margin: 4px 2px; }
+  button:hover { background: #388e3c; }
+  button.secondary { background: #455a64; }
+  button.secondary:hover { background: #546e7a; }
+  button.danger { background: #c62828; }
+  .log-area { background: #111; border: 1px solid #333; padding: 10px; max-height: 350px; overflow-y: auto; white-space: pre-wrap; font-size: 0.8em; color: #b0b0b0; margin-top: 8px; }
+  .file-list { list-style: none; max-height: 250px; overflow-y: auto; }
+  .file-list li { padding: 3px 0; }
+  .file-list a { color: #4fc3f7; text-decoration: none; }
+  .file-list a:hover { text-decoration: underline; }
+  .status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 0.8em; }
+  .status.running { background: #e65100; }
+  .status.completed { background: #2e7d32; }
+  .status.failed { background: #c62828; }
+  .validate-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>AGENCY — Tableau de bord</h1>
+
+  <div class="panel">
+    <h2>Configuration</h2>
+    <div class="row">
+      <div>
+        <label>Config (JSON)</label>
+        <input type="text" id="config" placeholder="chemin optionnel">
+      </div>
+      <div>
+        <label>Seed</label>
+        <input type="number" id="seed" placeholder="optionnel">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Output dir</label>
+        <input type="text" id="outputDir" value="">
+        <button class="secondary" onclick="pickDirectory()" style="margin-top:4px">Parcourir</button>
+      </div>
+      <div>
+        <label>Data dir</label>
+        <input type="text" id="dataDir" value="">
+      </div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <div>
+        <label>Phase de départ</label>
+        <input type="number" id="phaseStart" value="1" min="1" max="10">
+      </div>
+      <div style="display:flex;align-items:end;gap:12px;padding-bottom:2px">
+        <label><input type="checkbox" id="mock"> Mock</label>
+        <label><input type="checkbox" id="noLlm"> No-LLM</label>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <button onclick="startSim()">Lancer la simulation</button>
+      <button class="secondary" onclick="runTests()">Lancer les tests</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Validation de phase</h2>
+    <div class="validate-row">
+      <label style="display:inline;margin:0">Phase :</label>
+      <input type="number" id="validatePhase" value="1" min="1" max="10" style="width:60px">
+      <button onclick="validatePhase()">Valider</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Jobs</h2>
+    <div id="jobsList"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Log du job sélectionné</h2>
+    <div class="log-area" id="jobLog">Aucun job sélectionné.</div>
+  </div>
+
+  <div class="panel">
+    <h2>Fichiers de sortie</h2>
+    <button class="secondary" onclick="refreshOutputs()">Rafraîchir</button>
+    <ul class="file-list" id="fileList"></ul>
+  </div>
+</div>
+
+<script>
+const API = '';
+let currentJobId = null;
+let pollInterval = null;
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+async function startSim() {
+  const body = {
+    mock: document.getElementById('mock').checked,
+    no_llm: document.getElementById('noLlm').checked,
+    phase_start: parseInt(document.getElementById('phaseStart').value) || 1,
+  };
+  const cfg = document.getElementById('config').value.trim();
+  if (cfg) body.config = cfg;
+  const seed = document.getElementById('seed').value.trim();
+  if (seed) body.seed = parseInt(seed);
+  const od = document.getElementById('outputDir').value.trim();
+  if (od) body.output_dir = od;
+  const dd = document.getElementById('dataDir').value.trim();
+  if (dd) body.data_dir = dd;
+
+  const res = await api('POST', '/api/simulate', body);
+  currentJobId = res.job_id;
+  startPolling();
+  refreshJobs();
+}
+
+async function runTests() {
+  const res = await api('POST', '/api/test', {});
+  currentJobId = res.job_id;
+  startPolling();
+  refreshJobs();
+}
+
+async function validatePhase() {
+  const phase = parseInt(document.getElementById('validatePhase').value);
+  const od = document.getElementById('outputDir').value.trim();
+  const body = { phase };
+  if (od) body.output_dir = od;
+  await api('POST', '/api/validate', body);
+  document.getElementById('jobLog').textContent += `\n[UI] Phase ${phase} validée.`;
+}
+
+async function pickDirectory() {
+  try {
+    const res = await api('POST', '/api/pick-directory', {});
+    if (res.directory) document.getElementById('outputDir').value = res.directory;
+  } catch(e) {}
+}
+
+async function refreshJobs() {
+  const res = await api('GET', '/api/jobs');
+  const el = document.getElementById('jobsList');
+  if (!res.jobs || !res.jobs.length) { el.innerHTML = '<em>Aucun job.</em>'; return; }
+  el.innerHTML = res.jobs.map(j =>
+    `<div style="margin:4px 0;cursor:pointer" onclick="selectJob('${j.id}')">` +
+    `<span class="status ${j.status}">${j.status}</span> ` +
+    `<code>${j.id}</code> — ${j.started}</div>`
+  ).join('');
+}
+
+async function selectJob(id) {
+  currentJobId = id;
+  await refreshJobLog();
+}
+
+async function refreshJobLog() {
+  if (!currentJobId) return;
+  const res = await api('GET', `/api/jobs/${currentJobId}`);
+  document.getElementById('jobLog').textContent = res.log || '(vide)';
+  if (res.status !== 'running') stopPolling();
+}
+
+async function refreshOutputs() {
+  const od = document.getElementById('outputDir').value.trim();
+  const q = od ? `?dir=${encodeURIComponent(od)}` : '';
+  const res = await api('GET', `/api/outputs${q}`);
+  const el = document.getElementById('fileList');
+  if (!res.files || !res.files.length) { el.innerHTML = '<li><em>Aucun fichier.</em></li>'; return; }
+  el.innerHTML = res.files.map(f =>
+    `<li><a href="/files/${encodeURIComponent(f)}" target="_blank">${f}</a></li>`
+  ).join('');
+}
+
+function startPolling() {
+  stopPolling();
+  pollInterval = setInterval(() => { refreshJobLog(); refreshJobs(); refreshOutputs(); }, 2000);
+}
+
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+}
+
+// Initial load
+refreshJobs();
+refreshOutputs();
+</script>
+</body>
+</html>

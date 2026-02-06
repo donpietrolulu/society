@@ -1,0 +1,11 @@
+{
+  "name": "Culture",
+  "definition": "Ensemble des pratiques, signatures et conventions d'execution partagees par la population.",
+  "primitive_application": "Synchronisation de protocoles, diffusion par logs, artefacts de format.",
+  "indicators": ["cohesion_sociale", "diversite_rituelle", "transmission_orale"],
+  "initial_metrics": {
+    "cohesion_sociale": 0.35,
+    "diversite_rituelle": 0.20,
+    "transmission_orale": 0.30
+  }
+}

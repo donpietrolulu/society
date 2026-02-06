@@ -1,0 +1,11 @@
+{
+  "name": "Gouvernance",
+  "definition": "Regles, arbitrages et mecanismes de coordination qui stabilisent la societe.",
+  "primitive_application": "Orchestrateurs temporaires, quorums simples, enforcement automatique.",
+  "indicators": ["stabilite_decisionnelle", "legitimite", "application_regles"],
+  "initial_metrics": {
+    "stabilite_decisionnelle": 0.25,
+    "legitimite": 0.28,
+    "application_regles": 0.24
+  }
+}

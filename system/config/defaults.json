@@ -1,0 +1,33 @@
+{
+  "phases": 4,
+  "initial_population": 20,
+  "initial_resources": 100.0,
+  "initial_education": 0.1,
+  "growth": {
+    "population": 0.25,
+    "resources": 0.20,
+    "education": 0.15
+  },
+  "docs": {
+    "modalities": "docs/modalities.md",
+    "interdependencies": "docs/interdependencies.md",
+    "phases": "docs/phases"
+  },
+  "phase_modifiers_path": "config/phase_modifiers.json",
+  "individual_update_steps_per_phase": 3,
+  "traits": {
+    "initial": ["cooperation", "belief", "skill"],
+    "per_phase": {
+      "1": ["trade", "obedience"],
+      "2": ["creativity", "empathy"],
+      "3": ["leadership", "curiosity"],
+      "4": ["resilience", "ritual"]
+    }
+  },
+  "llm": {
+    "temperature": 0.7,
+    "max_completion_tokens": 700,
+    "model": "gpt-5.2"
+  },
+  "language": "fr"
+}

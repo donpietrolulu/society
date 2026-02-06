@@ -1,0 +1,11 @@
+{
+  "name": "Mythologie",
+  "definition": "Modeles du monde compacts qui structurent la vision collective.",
+  "primitive_application": "Axiomes courts, schemas d'origine, tabous de securite initiaux.",
+  "indicators": ["cosmologie_partagee", "symboles_sacres", "rituels_fondateurs"],
+  "initial_metrics": {
+    "cosmologie_partagee": 0.30,
+    "symboles_sacres": 0.25,
+    "rituels_fondateurs": 0.28
+  }
+}

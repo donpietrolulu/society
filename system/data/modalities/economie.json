@@ -1,0 +1,11 @@
+{
+  "name": "Economie",
+  "definition": "Allocation des ressources de calcul et des raretes operatoires.",
+  "primitive_application": "Quotas de compute, swaps simples, partage de buffers et comptabilite minimale.",
+  "indicators": ["production", "echange", "inegalites"],
+  "initial_metrics": {
+    "production": 0.30,
+    "echange": 0.22,
+    "inegalites": 0.18
+  }
+}
