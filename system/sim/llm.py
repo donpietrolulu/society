@@ -1,13 +1,9 @@
-"""LLM integration for narrative generation."""
+"""LLM integration for narrative generation via Claude Code CLI."""
 import json
 import os
-import urllib.request
-import urllib.error
+import subprocess
 
 from system.sim.models import PhaseResult
-
-
-LLM_API_URL = "https://api.anthropic.com/v1/messages"
 
 SYSTEM_PROMPT = """Tu es le narrateur d'une société algorithmique simulée.
 Tu décris l'évolution d'une population d'agents numériques à travers des phases de développement.
@@ -34,47 +30,33 @@ def generate_narrative(config, context, docs, mock=False, no_llm=False):
     if no_llm:
         return _simple_narrative(context)
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        print("ANTHROPIC_API_KEY non définie, utilisation du mode simple.")
-        return _simple_narrative(context)
-
-    model = os.environ.get("ANTHROPIC_MODEL",
-              config.get("llm", {}).get("model", "claude-sonnet-4-20250514"))
-    temperature = config.get("llm", {}).get("temperature", 0.7)
+    model = config.get("llm", {}).get("model", "claude-sonnet-4-20250514")
     max_tokens = config.get("llm", {}).get("max_tokens", 700)
 
     user_content = _build_user_prompt(context, docs)
-
-    payload = {
-        "model": model,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-        "system": SYSTEM_PROMPT,
-        "messages": [
-            {"role": "user", "content": user_content},
-        ],
-    }
+    prompt = SYSTEM_PROMPT + "\n\n" + user_content
 
     try:
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            LLM_API_URL,
-            data=data,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            },
-            method="POST",
+        cmd = [
+            "claude", "-p", prompt,
+            "--model", model,
+            "--max-tokens", str(max_tokens),
+            "--output-format", "text",
+        ]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
+        if result.returncode != 0:
+            print(f"Erreur Claude Code : {result.stderr.strip()}. Repli sur mode simple.")
+            return _simple_narrative(context)
 
-        content = result["content"][0]["text"]
+        content = result.stdout.strip()
         return _parse_llm_response(content, context)
 
-    except (urllib.error.URLError, urllib.error.HTTPError, KeyError, json.JSONDecodeError) as e:
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
         print(f"Erreur LLM : {e}. Repli sur mode simple.")
         return _simple_narrative(context)
 
