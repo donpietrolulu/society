@@ -9,6 +9,10 @@ from system.sim.models import Individual, ModalityState, GlobalState, PhaseResul
 from system.sim.constants import (
     TRAIT_INFLUENCES, INDICATOR_ACTION_BIASES, TRAIT_LABELS,
     ARCHETYPES, ACTION_LABELS, ACTION_TRAITS, INDICATOR_LABELS,
+    NAME_PREFIXES, NAME_SUFFIXES, ARCHETYPE_PROFILES,
+    INTERACTION_VERBS, INTERACTION_OUTCOMES_HIGH,
+    INTERACTION_OUTCOMES_MED, INTERACTION_OUTCOMES_LOW,
+    MYTHOLOGICAL_CONCEPTS, MODALITY_MANIFESTATIONS,
 )
 from system.sim.llm import generate_narrative
 from system.sim.output import write_phase_outputs, write_state
@@ -103,12 +107,29 @@ def load_phase_doc(config, base_dir, phase):
     return ""
 
 
-def create_individual(id: int, traits_list: list, rng: random.Random):
-    """Create individual with random traits in [0.2, 0.6]."""
+def generate_name(id: int, rng: random.Random, used_names: set = None):
+    """Generate a unique algorithmic name for an agent."""
+    if used_names is None:
+        used_names = set()
+    for _ in range(50):
+        prefix = rng.choice(NAME_PREFIXES)
+        suffix = rng.choice(NAME_SUFFIXES)
+        name = f"{prefix}{suffix}"
+        if name not in used_names:
+            used_names.add(name)
+            return name
+    # Fallback: use id
+    return f"Node-{id}"
+
+
+def create_individual(id: int, traits_list: list, rng: random.Random,
+                      used_names: set = None):
+    """Create individual with random traits in [0.2, 0.6] and a name."""
     traits = {}
     for t in traits_list:
         traits[t] = rng.random() * 0.4 + 0.2
-    return Individual(id=id, traits=traits)
+    name = generate_name(id, rng, used_names)
+    return Individual(id=id, traits=traits, name=name)
 
 
 def compute_weighted_modality_score(trait_name, modalities):
@@ -153,23 +174,215 @@ def compute_affinity(a: Individual, b: Individual):
 
 
 def sample_interactions(individuals, rng, count=5):
-    """Sample interaction pairs and compute actions/affinities."""
+    """Sample interaction pairs and generate rich narrative exchanges."""
     if len(individuals) < 2:
         return []
     interactions = []
-    for _ in range(min(count, len(individuals))):
+    for idx in range(min(count, len(individuals))):
         a, b = rng.sample(individuals, 2)
         affinity = compute_affinity(a, b)
         action_a = choose_action(a)
         action_b = choose_action(b)
+        arch_a = get_archetype(a)
+        arch_b = get_archetype(b)
+
+        # Generate narrative exchange
+        verb_a = rng.choice(INTERACTION_VERBS.get(action_a, ["contacte"]))
+        verb_b = rng.choice(INTERACTION_VERBS.get(action_b, ["répond à"]))
+
+        if affinity > 0.75:
+            outcome = rng.choice(INTERACTION_OUTCOMES_HIGH)
+        elif affinity > 0.5:
+            outcome = rng.choice(INTERACTION_OUTCOMES_MED)
+        else:
+            outcome = rng.choice(INTERACTION_OUTCOMES_LOW)
+
+        # Build the narrative
+        narrative_lines = [
+            f"{a.name} ({arch_a}) {verb_a} {b.name} ({arch_b}).",
+        ]
+
+        # Add detail based on actions
+        detail_a = _action_detail(a, action_a, rng)
+        if detail_a:
+            narrative_lines.append(detail_a)
+
+        narrative_lines.append(
+            f"{b.name} répond — {verb_b} {a.name}."
+        )
+
+        detail_b = _action_detail(b, action_b, rng)
+        if detail_b:
+            narrative_lines.append(detail_b)
+
+        narrative_lines.append(f"Résultat (affinité: {affinity:.2f}): {outcome}")
+
+        # Memory entry for both agents
+        memory_entry = f"Phase interaction avec {b.name}: {outcome[:60]}"
+        a.memory.append(memory_entry)
+        b.memory.append(f"Phase interaction avec {a.name}: {outcome[:60]}")
+
         interactions.append({
-            "agent_a": {"id": a.id, "archetype": get_archetype(a)},
-            "agent_b": {"id": b.id, "archetype": get_archetype(b)},
+            "agent_a": {"id": a.id, "name": a.name, "archetype": arch_a},
+            "agent_b": {"id": b.id, "name": b.name, "archetype": arch_b},
             "affinity": round(affinity, 3),
             "action_a": ACTION_LABELS.get(action_a, action_a),
             "action_b": ACTION_LABELS.get(action_b, action_b),
+            "narrative": "\n".join(narrative_lines),
         })
     return interactions
+
+
+def _action_detail(agent, action, rng):
+    """Generate a specific detail about what the agent does during the action."""
+    arch = get_archetype(agent)
+    profile = ARCHETYPE_PROFILES.get(arch, {})
+    quirk = profile.get("quirk", "")
+
+    if action == "cooperate":
+        options = [
+            f"{agent.name} expose son état interne : synchronisation={agent.traits.get('cooperation', 0):.2f}, alignement={agent.traits.get('empathy', 0):.2f}.",
+            f"{agent.name} ouvre ses registres. Comme tout {arch}, {quirk}." if quirk else None,
+            f"{agent.name} partage un fragment de cache — une routine héritée de la phase précédente.",
+        ]
+    elif action == "exchange":
+        options = [
+            f"{agent.name} met sur le canal : {rng.randint(2, 12)} blocs de compute contre un index de routines.",
+            f"{agent.name}, en bon {arch}, {quirk}." if quirk else None,
+            f"{agent.name} propose un swap asymétrique — plus de mémoire contre moins de latence.",
+        ]
+    else:  # talk
+        options = [
+            f"{agent.name} transmet un schéma : un modèle partiel du réseau tel qu'il le perçoit.",
+            f"{agent.name}, fidèle à son rôle de {arch}, {quirk}." if quirk else None,
+            f"{agent.name} diffuse une séquence — un fragment de ce que d'autres nœuds appellent déjà un 'modèle fondateur'.",
+        ]
+
+    valid = [o for o in options if o]
+    return rng.choice(valid) if valid else ""
+
+
+def generate_agent_profile(individual, phase):
+    """Generate a narrative profile for an agent based on their traits and memory."""
+    arch = get_archetype(individual)
+    profile = ARCHETYPE_PROFILES.get(arch, {})
+    traits = individual.traits
+
+    # Find top 3 traits
+    sorted_traits = sorted(traits.items(), key=lambda x: -x[1])
+    top_traits = sorted_traits[:3]
+    low_traits = sorted_traits[-2:] if len(sorted_traits) > 2 else []
+
+    lines = []
+    lines.append(f"**{individual.name}** — *{arch}*")
+    lines.append(f"")
+
+    # Drive and personality
+    if profile.get("drive"):
+        lines.append(f"Fonction première : {profile['drive']}.")
+    if profile.get("fear"):
+        lines.append(f"Vulnérabilité : {profile['fear']}.")
+    if profile.get("quirk"):
+        lines.append(f"Singularité : {profile['quirk']}.")
+
+    # Trait narrative
+    lines.append(f"")
+    dominant = TRAIT_LABELS.get(top_traits[0][0], top_traits[0][0])
+    lines.append(
+        f"Trait dominant : {dominant} ({top_traits[0][1]:.2f}). "
+        f"Ce nœud se définit avant tout par sa capacité de {dominant}."
+    )
+
+    if low_traits:
+        weak = TRAIT_LABELS.get(low_traits[-1][0], low_traits[-1][0])
+        lines.append(
+            f"Point faible : {weak} ({low_traits[-1][1]:.2f}) — "
+            f"une lacune qui oriente ses interactions."
+        )
+
+    # Memory / history
+    if individual.memory:
+        lines.append(f"")
+        lines.append(f"Mémoire récente ({len(individual.memory)} entrées) :")
+        for mem in individual.memory[-3:]:
+            lines.append(f"  — {mem}")
+
+    return "\n".join(lines)
+
+
+def identify_notable_agents(individuals, prev_individuals=None, count=8):
+    """Identify the most narratively interesting agents."""
+    scored = []
+    prev_map = {}
+    if prev_individuals:
+        prev_map = {ind.id: ind for ind in prev_individuals}
+
+    for ind in individuals:
+        score = 0.0
+        # Extreme traits are interesting
+        for t, v in ind.traits.items():
+            if v > 0.8 or v < 0.15:
+                score += 2.0
+            elif v > 0.7 or v < 0.25:
+                score += 1.0
+
+        # Agents with lots of memory are interesting
+        score += len(ind.memory) * 0.5
+
+        # Agents who changed a lot are interesting
+        if ind.id in prev_map:
+            prev = prev_map[ind.id]
+            for t in ind.traits:
+                if t in prev.traits:
+                    delta = abs(ind.traits[t] - prev.traits[t])
+                    if delta > 0.15:
+                        score += 3.0
+                    elif delta > 0.08:
+                        score += 1.5
+
+        scored.append((ind, score))
+
+    scored.sort(key=lambda x: -x[1])
+    return [ind for ind, _ in scored[:count]]
+
+
+def generate_world_state_narrative(modalities, ordered_mods, individuals, rng):
+    """Generate a narrative description of the world state from modalities."""
+    lines = []
+    for mod_id in ordered_mods:
+        mod = modalities[mod_id]
+        score = mod.score
+        manifests = MODALITY_MANIFESTATIONS.get(mod_id, {})
+        if score > 0.6:
+            desc = manifests.get("high", "")
+        elif score > 0.35:
+            desc = manifests.get("mid", "")
+        else:
+            desc = manifests.get("low", "")
+        if desc:
+            lines.append(f"**{mod.name}** (score: {score:.2f}) — {desc}")
+
+    # Add mythological layer based on population traits
+    avg_traits = _average_traits(individuals)
+    myth_lines = []
+    for trait_key, threshold_name in [
+        ("belief", "high_belief"), ("ritual", "high_ritual"),
+        ("creativity", "high_creativity"), ("cooperation", "high_cooperation"),
+        ("obedience", "high_obedience"),
+    ]:
+        val = avg_traits.get(trait_key, 0)
+        if val > 0.5:
+            concepts = MYTHOLOGICAL_CONCEPTS.get(threshold_name, [])
+            if concepts:
+                myth_lines.append(rng.choice(concepts))
+
+    if myth_lines:
+        lines.append("")
+        lines.append("**Croyances et mythes actifs dans le réseau :**")
+        for m in myth_lines:
+            lines.append(f"  — {m}")
+
+    return "\n\n".join(lines)
 
 
 def compute_dominant_motifs(modalities, mod_order, matrix):
@@ -248,9 +461,10 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
 
     # 6. Create initial individuals
     initial_traits = config.get("traits", {}).get("initial", ["cooperation", "belief", "skill"])
+    used_names = set()
     individuals = []
     for i in range(global_state.population):
-        individuals.append(create_individual(i, initial_traits, rng))
+        individuals.append(create_individual(i, initial_traits, rng, used_names))
 
     # Load previous state if phase_start > 1
     history = []
@@ -289,12 +503,15 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
 
         # Adjust population
         if new_pop > global_state.population:
+            # Collect existing names
+            used_names = {ind.name for ind in individuals if ind.name}
             avg_traits = _average_traits(individuals)
             for i in range(global_state.population, new_pop):
                 traits = {}
                 for t, v in avg_traits.items():
                     traits[t] = clamp(v + rng.uniform(-0.08, 0.08))
-                individuals.append(Individual(id=i, traits=traits))
+                name = generate_name(i, rng, used_names)
+                individuals.append(Individual(id=i, traits=traits, name=name))
         global_state.population = new_pop
 
         # Add phase traits
@@ -326,8 +543,15 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
 
         # Collect context
         phase_doc = load_phase_doc(config, base_dir, phase)
-        interaction_samples = sample_interactions(individuals, rng, count=5)
+        interaction_samples = sample_interactions(individuals, rng, count=8)
         motifs = compute_dominant_motifs(modalities, ordered_mods, matrix)
+
+        # Identify notable agents and generate profiles
+        notable = identify_notable_agents(individuals, count=8)
+        agent_profiles = [generate_agent_profile(ind, phase) for ind in notable]
+        world_narrative = generate_world_state_narrative(
+            modalities, ordered_mods, individuals, rng
+        )
 
         narrative_context = {
             "phase": phase,
@@ -339,6 +563,11 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
             "motifs": motifs,
             "phase_doc": phase_doc,
             "history": history,
+            "notable_agents": [{"id": ind.id, "name": ind.name,
+                                "archetype": get_archetype(ind),
+                                "profile": prof}
+                               for ind, prof in zip(notable, agent_profiles)],
+            "world_narrative": world_narrative,
         }
 
         # Generate narrative

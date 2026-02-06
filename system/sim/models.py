@@ -3,18 +3,31 @@ import copy
 
 
 class Individual:
-    """An agent with numeric traits."""
+    """An agent with numeric traits, identity, and memory."""
 
-    def __init__(self, id: int, traits: dict = None):
+    def __init__(self, id: int, traits: dict = None, name: str = "",
+                 memory: list = None):
         self.id = id
         self.traits = traits or {}
+        self.name = name
+        self.memory = memory or []
 
     def to_dict(self):
-        return {"id": self.id, "traits": dict(self.traits)}
+        return {
+            "id": self.id,
+            "traits": dict(self.traits),
+            "name": self.name,
+            "memory": list(self.memory),
+        }
 
     @classmethod
     def from_dict(cls, d):
-        return cls(id=d["id"], traits=dict(d["traits"]))
+        return cls(
+            id=d["id"],
+            traits=dict(d["traits"]),
+            name=d.get("name", ""),
+            memory=list(d.get("memory", [])),
+        )
 
 
 class ModalityState:
