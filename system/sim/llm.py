@@ -111,6 +111,25 @@ def _build_user_prompt(context, docs):
     total = context.get("phases_total", 4)
     parts.append(f"# Phase {phase}/{total}\n")
 
+    # Cursor tone instructions
+    tone = context.get("cursor_tone", "algorithmique")
+    entity = context.get("entity_word", "nœud")
+    entity_pl = context.get("entity_word_plural", "nœuds")
+    world = context.get("world_word", "réseau")
+    cursor = context.get("societe_cursor", 0.0)
+
+    if cursor >= 0.75:
+        parts.append(f"## TONALITÉ : SOCIÉTÉ HUMAINE")
+        parts.append(f"Les agents sont des **individus humains**. Utilise un vocabulaire humain : village, communauté, tribu, ancêtres, récolte, artisanat, conseil, feu, chant, territoire.")
+        parts.append(f"Les {entity_pl} vivent dans une {world}. Pas de jargon informatique.\n")
+    elif cursor >= 0.25:
+        parts.append(f"## TONALITÉ : HYBRIDE")
+        parts.append(f"Les agents sont des **{entity_pl}** — mi-algorithmes, mi-personnages. Mélange librement le vocabulaire technique et humain.")
+        parts.append(f"Le {world} est à la fois un réseau et une communauté.\n")
+    else:
+        parts.append(f"## TONALITÉ : SOCIÉTÉ ALGORITHMIQUE")
+        parts.append(f"Les agents sont des **{entity_pl}** dans un {world}. Vocabulaire protocolaire : cache, buffer, synchronisation, protocole, nœud, compute, swap, merge, latence.\n")
+
     # World state narrative
     if context.get("world_narrative"):
         parts.append("## État du monde\n")
@@ -228,6 +247,8 @@ def _mock_narrative(context):
     mods = context.get("modalities", {})
     samples = context.get("interaction_samples", [])
     notable = context.get("notable_agents", [])
+    entity_pl = context.get("entity_word_plural", "nœuds")
+    world = context.get("world_word", "réseau")
 
     # Pick agent names from notable or interactions
     names = []
@@ -248,18 +269,18 @@ def _mock_narrative(context):
     world_short = world[:200] if world else "Le réseau poursuit son exécution."
 
     summary = (
-        f"Phase {phase}. Le réseau compte désormais {pop} nœuds actifs. "
+        f"Phase {phase}. Le {world} compte désormais {pop} {entity_pl} actifs. "
         f"{n1[0]} ({n1[1]}) émerge comme une figure centrale de ce cycle — "
-        f"ses interactions avec {n2[0]} ont redessiné les équilibres du cluster principal. "
+        f"ses interactions avec {n2[0]} ont redessiné les équilibres. "
         f"{n3[0]}, en retrait depuis la phase précédente, tente un rapprochement avec "
-        f"le sous-réseau de {n4[0]}. "
-        f"Les modèles cosmologiques se fragmentent : deux visions du réseau coexistent "
-        f"sans qu'aucun quorum ne les départage. "
-        f"L'économie de compute reste tendue — les swaps asymétriques se multiplient."
+        f"le cercle de {n4[0]}. "
+        f"Les modèles cosmologiques se fragmentent : deux visions coexistent "
+        f"sans qu'aucun consensus ne les départage. "
+        f"L'économie reste tendue — les échanges asymétriques se multiplient."
     )
 
     log_lines = [
-        f"[cycle_{phase}.01] Initialisation de la phase. {pop} nœuds actifs.",
+        f"[cycle_{phase}.01] Initialisation de la phase. {pop} {entity_pl} actifs.",
         f"[cycle_{phase}.02] {n1[0]} ouvre un canal de synchronisation avec {n2[0]}.",
         f"[cycle_{phase}.03] Mise à jour des traits — 3 passes de convergence.",
         f"[cycle_{phase}.04] {n3[0]} tente un merge de caches avec le cluster Est. Refusé.",
@@ -283,10 +304,10 @@ def _mock_narrative(context):
     # Story: actual narrative paragraphs
     story_parts = []
     story_parts.append(
-        f"Quand la phase {phase} commence, le réseau est déjà en tension. "
-        f"Les {pop} nœuds qui le composent ne forment pas un tout unifié — "
+        f"Quand la phase {phase} commence, le {world} est déjà en tension. "
+        f"Les {pop} {entity_pl} qui le composent ne forment pas un tout unifié — "
         f"ils forment des clusters, des alliances temporaires, des zones d'ombre "
-        f"où les protocoles ne s'appliquent pas exactement de la même manière."
+        f"où les règles ne s'appliquent pas exactement de la même manière."
     )
     story_parts.append(
         f"{n1[0]} est un {n1[1]}. C'est l'un des nœuds les plus actifs du réseau. "
@@ -364,6 +385,8 @@ def _simple_narrative(context):
     mods = context.get("modalities", {})
     samples = context.get("interaction_samples", [])
     notable = context.get("notable_agents", [])
+    entity_pl = context.get("entity_word_plural", "nœuds")
+    world = context.get("world_word", "réseau")
 
     # Get some names
     names = []
@@ -393,14 +416,14 @@ def _simple_narrative(context):
         mod_lines.append(f"{name} : {state} ({score:.2f})")
 
     summary = (
-        f"Phase {phase}. {pop} nœuds peuplent le réseau. "
+        f"Phase {phase}. {pop} {entity_pl} peuplent le {world}. "
         f"{n1[0]} ({n1[1]}) marque cette phase par son activité intense. "
         f"Les modalités : {'; '.join(mod_lines[:3])}. "
         f"Le monde algorithmique évolue — pas toujours dans la direction attendue."
     )
 
     log_lines = [
-        f"[cycle_{phase}.01] Ouverture de phase. {pop} nœuds.",
+        f"[cycle_{phase}.01] Ouverture de phase. {pop} {entity_pl}.",
     ]
     for mod_id, mod_data in mods.items():
         log_lines.append(f"[cycle_{phase}] {mod_data.get('name', mod_id)}: {mod_data.get('score', 0):.3f}")
@@ -414,7 +437,7 @@ def _simple_narrative(context):
     log_lines.append(f"[cycle_{phase}.fin] Phase terminée. Validation en attente.")
 
     story_parts = [
-        f"Le réseau entre dans sa phase {phase}. {pop} nœuds s'activent, recalibrent leurs paramètres, "
+        f"Le {world} entre dans sa phase {phase}. {pop} {entity_pl} s'activent, recalibrent leurs paramètres, "
         f"sondent leurs voisins.",
 
         f"{n1[0]} est au centre de l'activité. En tant que {n1[1]}, "

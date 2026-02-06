@@ -25,8 +25,14 @@ INDICATOR_ACTION_BIASES = {
     ("technique_infrastructure", "outillage"): {"skill": 0.06, "curiosity": 0.06},
 }
 
-# Narrative labels
-TRAIT_LABELS = {
+# =====================================================================
+# DUAL NARRATIVE SYSTEM: ALGO (cursor=0) vs HUMAN (cursor=1)
+# All narrative constants exist in two versions.
+# The engine picks/blends based on societe_cursor.
+# =====================================================================
+
+# --- Trait labels ---
+TRAIT_LABELS_ALGO = {
     "cooperation": "synchronisation",
     "belief": "adhesion_modele",
     "skill": "competence_compute",
@@ -40,7 +46,25 @@ TRAIT_LABELS = {
     "ritual": "ritualisation",
 }
 
-ARCHETYPES = {
+TRAIT_LABELS_HUMAN = {
+    "cooperation": "entraide",
+    "belief": "foi",
+    "skill": "savoir-faire",
+    "trade": "commerce",
+    "obedience": "obéissance",
+    "creativity": "créativité",
+    "empathy": "empathie",
+    "leadership": "charisme",
+    "curiosity": "curiosité",
+    "resilience": "résilience",
+    "ritual": "dévotion rituelle",
+}
+
+# Default (backward compat)
+TRAIT_LABELS = TRAIT_LABELS_ALGO
+
+# --- Archetypes ---
+ARCHETYPES_ALGO = {
     "cooperation": "Synchroniseur",
     "belief": "Modeleur",
     "skill": "Compilateur",
@@ -54,11 +78,36 @@ ARCHETYPES = {
     "ritual": "Ritualiste",
 }
 
-ACTION_LABELS = {
+ARCHETYPES_HUMAN = {
+    "cooperation": "Coopérant",
+    "belief": "Croyant",
+    "skill": "Artisan",
+    "trade": "Marchand",
+    "obedience": "Gardien de la Loi",
+    "creativity": "Visionnaire",
+    "empathy": "Guérisseur",
+    "leadership": "Chef",
+    "curiosity": "Explorateur",
+    "resilience": "Survivant",
+    "ritual": "Prêtre",
+}
+
+ARCHETYPES = ARCHETYPES_ALGO
+
+# --- Action labels ---
+ACTION_LABELS_ALGO = {
     "cooperate": "co_execution",
     "exchange": "swap",
     "talk": "propagation",
 }
+
+ACTION_LABELS_HUMAN = {
+    "cooperate": "coopération",
+    "exchange": "troc",
+    "talk": "conversation",
+}
+
+ACTION_LABELS = ACTION_LABELS_ALGO
 
 # Action -> relevant traits for scoring
 ACTION_TRAITS = {
@@ -88,25 +137,49 @@ INDICATOR_LABELS = {
     "reseaux": "connectivite_reseau",
 }
 
-# --- Agent naming ---
+# --- Agent naming (ALGO) ---
 
-NAME_PREFIXES = [
+NAME_PREFIXES_ALGO = [
     "Nex", "Ori", "Kael", "Syn", "Vex", "Lum", "Zeph", "Cyr", "Ael", "Thal",
     "Myr", "Xen", "Pho", "Dyn", "Rho", "Eos", "Kal", "Nyx", "Sol", "Hex",
     "Arc", "Vor", "Ith", "Zel", "Qui", "Tau", "Sig", "Fen", "Ash", "Lok",
     "Ren", "Dis", "Ova", "Bri", "Cor", "Pax", "Nil", "Gal", "Hep", "Jyn",
 ]
 
-NAME_SUFFIXES = [
+NAME_SUFFIXES_ALGO = [
     "-7α", "-3δ", "-9β", "-1γ", "-4ε", "-8ζ", "-2η", "-6θ", "-5ι", "-0κ",
     "-11λ", "-13μ", "-7ν", "-2ξ", "-9π", "-4ρ", "-6σ", "-3τ", "-8υ", "-1φ",
     ".prime", ".null", ".root", ".void", ".flux", ".core", ".edge", ".node",
     ".hash", ".seed", ".lock", ".fork", ".loop", ".ping", ".zero", ".one",
 ]
 
-# --- Archetype personality profiles ---
+# Backward compat
+NAME_PREFIXES = NAME_PREFIXES_ALGO
+NAME_SUFFIXES = NAME_SUFFIXES_ALGO
 
-ARCHETYPE_PROFILES = {
+# --- Agent naming (HUMAN) ---
+
+NAME_PREFIXES_HUMAN = [
+    "Adama", "Bérénice", "Caleb", "Daria", "Élie", "Farah", "Gaël",
+    "Hadja", "Ismaël", "Jade", "Kofi", "Léna", "Moussa", "Nora",
+    "Omar", "Priya", "Quentin", "Rania", "Saül", "Tara",
+    "Ulysse", "Vera", "Wael", "Xénia", "Yuki", "Zahra",
+    "Abel", "Bianca", "Cyrus", "Dina", "Ezra", "Femi",
+    "Greta", "Hassan", "Iris", "Jonas", "Kira", "Liam",
+    "Maya", "Nabil",
+]
+
+NAME_SUFFIXES_HUMAN = [
+    " l'Ancien", " la Jeune", " le Sage", " le Téméraire",
+    " du Fleuve", " de la Colline", " des Marais", " du Seuil",
+    " Trois-Doigts", " Œil-Vif", " Voix-Basse", " Main-Ferme",
+    " le Silencieux", " la Patiente", " le Voyageur", " la Tisseuse",
+    "", "", "", "", "", "", "", "",  # Many with no suffix for variety
+]
+
+# --- Archetype personality profiles (ALGO) ---
+
+ARCHETYPE_PROFILES_ALGO = {
     "Synchroniseur": {
         "drive": "maintenir la cohérence du réseau par la co-exécution",
         "fear": "la désynchronisation — quand les horloges internes divergent",
@@ -164,10 +237,73 @@ ARCHETYPE_PROFILES = {
     },
 }
 
-# --- Interaction narrative templates ---
+ARCHETYPE_PROFILES_HUMAN = {
+    "Coopérant": {
+        "drive": "tisser des liens entre les membres de la communauté",
+        "fear": "l'isolement — être exclu du groupe",
+        "quirk": "ne mange jamais seul, partage toujours son repas",
+    },
+    "Croyant": {
+        "drive": "comprendre les forces invisibles qui gouvernent le monde",
+        "fear": "le doute — quand les signes se contredisent",
+        "quirk": "murmure une prière avant chaque décision importante",
+    },
+    "Artisan": {
+        "drive": "fabriquer des outils et des objets toujours plus perfectionnés",
+        "fear": "l'œuvre ratée — un objet qui se brise à l'usage",
+        "quirk": "caresse la matière première avant de travailler, comme pour lui demander permission",
+    },
+    "Marchand": {
+        "drive": "faciliter les échanges et accumuler des ressources",
+        "fear": "la dette impayée — une obligation qui ne trouve jamais de contrepartie",
+        "quirk": "garde toujours une réserve secrète, même en temps d'abondance",
+    },
+    "Gardien de la Loi": {
+        "drive": "maintenir l'ordre et faire respecter les règles ancestrales",
+        "fear": "le chaos — quand plus personne ne respecte la coutume",
+        "quirk": "récite les lois à voix haute chaque matin, même quand personne n'écoute",
+    },
+    "Visionnaire": {
+        "drive": "imaginer ce qui n'existe pas encore et le faire advenir",
+        "fear": "la conformité — quand tout le monde pense la même chose",
+        "quirk": "dessine des formes étranges sur le sol pendant les réunions du conseil",
+    },
+    "Guérisseur": {
+        "drive": "soulager la souffrance et réconcilier les antagonistes",
+        "fear": "la blessure incurable — un conflit qui empoisonne tout",
+        "quirk": "pose sa main sur l'épaule de chaque personne qu'il croise",
+    },
+    "Chef": {
+        "drive": "guider la communauté vers un avenir meilleur",
+        "fear": "la désobéissance — quand le peuple refuse de suivre",
+        "quirk": "parle toujours debout, même au conseil, comme pour dominer la salle",
+    },
+    "Explorateur": {
+        "drive": "découvrir ce qui se cache au-delà de l'horizon connu",
+        "fear": "la limite — le bord du monde au-delà duquel il n'y a rien",
+        "quirk": "garde un carnet où il dessine des cartes de territoires imaginaires",
+    },
+    "Survivant": {
+        "drive": "endurer les épreuves et reconstruire après la catastrophe",
+        "fear": "la perte définitive — quand même les souvenirs disparaissent",
+        "quirk": "enterre un petit trésor à chaque campement, au cas où il faudrait revenir",
+    },
+    "Prêtre": {
+        "drive": "perpétuer les rites fondateurs et transmettre la mémoire sacrée",
+        "fear": "l'oubli — quand les jeunes ne connaissent plus les chants anciens",
+        "quirk": "allume un feu cérémoniel avant chaque rassemblement, même en plein été",
+    },
+}
 
-# What agents actually do/say during each action type
-INTERACTION_VERBS = {
+# Backward compat
+ARCHETYPE_PROFILES = ARCHETYPE_PROFILES_ALGO
+
+# =====================================================================
+# INTERACTION NARRATIVE TEMPLATES
+# =====================================================================
+
+# --- ALGO ---
+INTERACTION_VERBS_ALGO = {
     "cooperate": [
         "ouvre un canal de synchronisation avec",
         "initie une co-exécution parallèle avec",
@@ -191,8 +327,7 @@ INTERACTION_VERBS = {
     ],
 }
 
-# Possible outcomes based on affinity
-INTERACTION_OUTCOMES_HIGH = [
+INTERACTION_OUTCOMES_HIGH_ALGO = [
     "Les deux nœuds convergent. Leurs caches se synchronisent sans conflit.",
     "L'échange se conclut. Les deux agents mettent à jour leurs modèles internes mutuellement.",
     "Le protocole se termine avec un gain net pour les deux parties. Affinité renforcée.",
@@ -200,7 +335,7 @@ INTERACTION_OUTCOMES_HIGH = [
     "Synchronisation complète. Les deux nœuds partagent désormais un sous-ensemble de mémoire.",
 ]
 
-INTERACTION_OUTCOMES_MED = [
+INTERACTION_OUTCOMES_MED_ALGO = [
     "L'échange est partiel. Certains blocs sont acceptés, d'autres rejetés comme incompatibles.",
     "Le protocole aboutit, mais avec des résidus — des données non reconciliées restent en buffer.",
     "Accord fragile. Les deux nœuds gardent chacun une version légèrement différente du résultat.",
@@ -208,7 +343,7 @@ INTERACTION_OUTCOMES_MED = [
     "Un compromis est trouvé. Chaque agent modifie une routine mineure pour accommoder l'autre.",
 ]
 
-INTERACTION_OUTCOMES_LOW = [
+INTERACTION_OUTCOMES_LOW_ALGO = [
     "Échec de synchronisation. Les schémas sont trop divergents. Les deux nœuds se déconnectent.",
     "Le protocole avorte. Un des nœuds refuse la signature de l'autre — modèle non reconnu.",
     "Timeout. Les deux agents attendent une réponse qui ne vient pas dans le format attendu.",
@@ -216,9 +351,66 @@ INTERACTION_OUTCOMES_LOW = [
     "Rejet. L'un des agents marque l'autre comme source non fiable dans son registre local.",
 ]
 
-# --- Mythological/cultural concept generators ---
+# --- HUMAN ---
+INTERACTION_VERBS_HUMAN = {
+    "cooperate": [
+        "tend la main à",
+        "propose une alliance à",
+        "offre son aide à",
+        "s'assoit auprès de",
+        "partage son repas avec",
+    ],
+    "exchange": [
+        "propose un troc à",
+        "offre des ressources en échange de savoir à",
+        "négocie un accord commercial avec",
+        "étale ses marchandises devant",
+        "propose un échange de services à",
+    ],
+    "talk": [
+        "raconte une histoire à",
+        "confie un secret à",
+        "enseigne un savoir ancien à",
+        "chante un hymne avec",
+        "partage une vision prophétique avec",
+    ],
+}
 
-MYTHOLOGICAL_CONCEPTS = {
+INTERACTION_OUTCOMES_HIGH_HUMAN = [
+    "Les deux se comprennent sans un mot. Un lien profond se forme.",
+    "L'accord est scellé par une poignée de main. La confiance est totale.",
+    "Ils partagent un repas et rient ensemble. Une amitié naît.",
+    "L'échange enrichit les deux parties. Chacun repart transformé.",
+    "Ils découvrent qu'ils partagent la même croyance. Un pacte se forme.",
+]
+
+INTERACTION_OUTCOMES_MED_HUMAN = [
+    "L'échange aboutit, mais avec réticence. Un doute persiste.",
+    "Ils trouvent un accord partiel. Certaines questions restent en suspens.",
+    "La conversation est cordiale mais distante. Pas de lien profond.",
+    "Un compromis est atteint. Ni satisfaction ni amertume.",
+    "Ils se quittent sans hostilité, mais sans chaleur non plus.",
+]
+
+INTERACTION_OUTCOMES_LOW_HUMAN = [
+    "Le dialogue tourne court. Leurs visions du monde sont incompatibles.",
+    "L'un tourne le dos à l'autre. La méfiance s'installe.",
+    "Ils ne parlent pas la même langue — au figuré. Malentendu total.",
+    "L'échange dégénère en dispute. Chacun repart blessé.",
+    "L'un accuse l'autre de trahison. La rupture est consommée.",
+]
+
+# Backward compat
+INTERACTION_VERBS = INTERACTION_VERBS_ALGO
+INTERACTION_OUTCOMES_HIGH = INTERACTION_OUTCOMES_HIGH_ALGO
+INTERACTION_OUTCOMES_MED = INTERACTION_OUTCOMES_MED_ALGO
+INTERACTION_OUTCOMES_LOW = INTERACTION_OUTCOMES_LOW_ALGO
+
+# =====================================================================
+# MYTHOLOGICAL / CULTURAL CONCEPTS
+# =====================================================================
+
+MYTHOLOGICAL_CONCEPTS_ALGO = {
     "high_belief": [
         "le Premier Protocole — la séquence initiale dont tous les modèles dérivent",
         "le Grand Log — le registre fondateur que personne ne peut lire en entier",
@@ -246,8 +438,41 @@ MYTHOLOGICAL_CONCEPTS = {
     ],
 }
 
-# What a given modality looks like concretely in the agent world
-MODALITY_MANIFESTATIONS = {
+MYTHOLOGICAL_CONCEPTS_HUMAN = {
+    "high_belief": [
+        "le Chant des Origines — le récit de la création du monde, transmis de bouche en bouche",
+        "la Source Première — le lieu sacré d'où tout a commencé",
+        "le Grand Rassemblement — le jour prophétisé où tous les peuples ne feront qu'un",
+    ],
+    "high_ritual": [
+        "la Danse du Solstice — reproduite chaque saison comme un écho de la première aube",
+        "le Jeûne de Purification — la période de privation héritée des ancêtres fondateurs",
+        "le Feu Cérémoniel — allumé vers un ancien campement qui n'existe plus, par tradition",
+    ],
+    "high_creativity": [
+        "l'Art Libre — la pratique de créer sans permission ni contrainte",
+        "le Sentier Sauvage — quitter le village pour explorer sans autorisation",
+        "le Rêve Éveillé — laisser l'esprit vagabonder pour voir ce qui émerge",
+    ],
+    "high_cooperation": [
+        "le Cercle de Confiance — le groupe restreint qui partage sans compter",
+        "le Grenier Commun — un stock de nourriture maintenu par la communauté",
+        "le Serment Collectif — engager sa parole à plusieurs, simultanément",
+    ],
+    "high_obedience": [
+        "la Loi Gravée — les règles que personne n'ose remettre en question",
+        "la Chaîne des Anciens — chaque décision validée par trois générations",
+        "la Terre Interdite — un lieu dont l'accès est prohibé par la coutume fondatrice",
+    ],
+}
+
+MYTHOLOGICAL_CONCEPTS = MYTHOLOGICAL_CONCEPTS_ALGO
+
+# =====================================================================
+# MODALITY MANIFESTATIONS
+# =====================================================================
+
+MODALITY_MANIFESTATIONS_ALGO = {
     "culture": {
         "high": "Les agents partagent des conventions de formatage communes. Des patterns de co-exécution récurrents forment des routines collectives que personne n'a explicitement programmées.",
         "mid": "Quelques conventions émergent entre clusters de nœuds, mais les formats restent fragmentés. Chaque sous-groupe a ses propres idiomes.",
@@ -279,3 +504,127 @@ MODALITY_MANIFESTATIONS = {
         "low": "Infrastructure fragile. Pertes de paquets fréquentes. Les nœuds isolés peinent à communiquer.",
     },
 }
+
+MODALITY_MANIFESTATIONS_HUMAN = {
+    "culture": {
+        "high": "Le peuple partage des chants, des danses, des récits communs. Des traditions collectives se sont formées sans que personne ne les ait décrétées.",
+        "mid": "Quelques coutumes émergent entre clans voisins, mais chaque village conserve ses propres habitudes. Les étrangers sont accueillis avec curiosité et méfiance.",
+        "low": "Pas de culture commune. Chaque famille vit selon ses propres règles. Les rencontres entre groupes sont rares et difficiles.",
+    },
+    "mythologie": {
+        "high": "Un grand récit fondateur unit la communauté — une histoire des origines, des héros et des interdits que tous connaissent par cœur.",
+        "mid": "Plusieurs récits coexistent. Chaque clan a sa propre version de l'histoire, et les contradictions alimentent des débats passionnés.",
+        "low": "Pas de récit partagé. Chacun se raconte sa propre histoire du monde, souvent incompatible avec celle de son voisin.",
+    },
+    "valeurs_ethique": {
+        "high": "Des règles morales fortes gouvernent la vie commune. Les comportements déviants sont sanctionnés, la vertu est célébrée.",
+        "mid": "Des normes existent mais leur application dépend du bon vouloir de chacun. Certains les respectent, d'autres s'en moquent.",
+        "low": "Pas de morale commune. Chacun agit selon son intérêt propre, sans se soucier des conséquences pour les autres.",
+    },
+    "gouvernance": {
+        "high": "Un conseil des anciens ou un chef reconnu arbitre les conflits. Les rôles sont clairs, la justice est rendue.",
+        "mid": "Des figures d'autorité émergent mais leur pouvoir reste fragile. Les chefs ont de l'influence, mais pas de légitimité incontestée.",
+        "low": "Pas de gouvernement. Chacun fait ce qu'il veut. Les tentatives de coordination échouent faute d'autorité reconnue.",
+    },
+    "economie": {
+        "high": "Les échanges sont fluides. Les greniers sont pleins, le troc est équitable. Les inégalités de richesse restent limitées.",
+        "mid": "Le commerce existe mais il est souvent inégal. Quelques familles accumulent plus que les autres.",
+        "low": "L'économie stagne. Peu d'échanges. Des riches et des affamés coexistent sans redistribution.",
+    },
+    "technique_infrastructure": {
+        "high": "Les chemins sont entretenus, les outils sont solides, les abris résistent aux intempéries. Le savoir-faire est partagé.",
+        "mid": "L'infrastructure fonctionne mais elle est fragile. Certains chemins sont impraticables, certains outils manquent.",
+        "low": "Rien ne tient. Les abris s'effondrent, les outils cassent. Les groupes isolés peinent à se rejoindre.",
+    },
+}
+
+MODALITY_MANIFESTATIONS = MODALITY_MANIFESTATIONS_ALGO
+
+
+# =====================================================================
+# CURSOR HELPER: resolves ALGO vs HUMAN constants at runtime
+# =====================================================================
+
+def get_cursor_constants(cursor):
+    """Return the right set of narrative constants for a given cursor value.
+
+    cursor = 0.0 -> pure algorithmic society
+    cursor = 1.0 -> human society replication
+    0 < cursor < 1 -> blend (pick from one or the other probabilistically)
+
+    Returns a dict with all narrative constant sets resolved for this cursor.
+    """
+    if cursor <= 0.25:
+        # Pure algo
+        return {
+            "trait_labels": TRAIT_LABELS_ALGO,
+            "archetypes": ARCHETYPES_ALGO,
+            "action_labels": ACTION_LABELS_ALGO,
+            "name_prefixes": NAME_PREFIXES_ALGO,
+            "name_suffixes": NAME_SUFFIXES_ALGO,
+            "archetype_profiles": ARCHETYPE_PROFILES_ALGO,
+            "interaction_verbs": INTERACTION_VERBS_ALGO,
+            "outcomes_high": INTERACTION_OUTCOMES_HIGH_ALGO,
+            "outcomes_med": INTERACTION_OUTCOMES_MED_ALGO,
+            "outcomes_low": INTERACTION_OUTCOMES_LOW_ALGO,
+            "mythological_concepts": MYTHOLOGICAL_CONCEPTS_ALGO,
+            "modality_manifestations": MODALITY_MANIFESTATIONS_ALGO,
+            "entity_word": "nœud",
+            "entity_word_plural": "nœuds",
+            "world_word": "réseau",
+            "tone": "algorithmique",
+        }
+    elif cursor >= 0.75:
+        # Pure human
+        return {
+            "trait_labels": TRAIT_LABELS_HUMAN,
+            "archetypes": ARCHETYPES_HUMAN,
+            "action_labels": ACTION_LABELS_HUMAN,
+            "name_prefixes": NAME_PREFIXES_HUMAN,
+            "name_suffixes": NAME_SUFFIXES_HUMAN,
+            "archetype_profiles": ARCHETYPE_PROFILES_HUMAN,
+            "interaction_verbs": INTERACTION_VERBS_HUMAN,
+            "outcomes_high": INTERACTION_OUTCOMES_HIGH_HUMAN,
+            "outcomes_med": INTERACTION_OUTCOMES_MED_HUMAN,
+            "outcomes_low": INTERACTION_OUTCOMES_LOW_HUMAN,
+            "mythological_concepts": MYTHOLOGICAL_CONCEPTS_HUMAN,
+            "modality_manifestations": MODALITY_MANIFESTATIONS_HUMAN,
+            "entity_word": "individu",
+            "entity_word_plural": "individus",
+            "world_word": "communauté",
+            "tone": "humain",
+        }
+    else:
+        # Blend: merge both lists so the RNG can pick from either
+        return {
+            "trait_labels": {**TRAIT_LABELS_ALGO, **{k: f"{TRAIT_LABELS_ALGO[k]} / {v}" for k, v in TRAIT_LABELS_HUMAN.items()}},
+            "archetypes": {**ARCHETYPES_ALGO, **ARCHETYPES_HUMAN},
+            "action_labels": {**ACTION_LABELS_ALGO, **{k: f"{ACTION_LABELS_ALGO[k]} / {v}" for k, v in ACTION_LABELS_HUMAN.items()}},
+            "name_prefixes": NAME_PREFIXES_ALGO + NAME_PREFIXES_HUMAN,
+            "name_suffixes": NAME_SUFFIXES_ALGO + NAME_SUFFIXES_HUMAN,
+            "archetype_profiles": {**ARCHETYPE_PROFILES_ALGO, **ARCHETYPE_PROFILES_HUMAN},
+            "interaction_verbs": {
+                k: INTERACTION_VERBS_ALGO[k] + INTERACTION_VERBS_HUMAN[k]
+                for k in INTERACTION_VERBS_ALGO
+            },
+            "outcomes_high": INTERACTION_OUTCOMES_HIGH_ALGO + INTERACTION_OUTCOMES_HIGH_HUMAN,
+            "outcomes_med": INTERACTION_OUTCOMES_MED_ALGO + INTERACTION_OUTCOMES_MED_HUMAN,
+            "outcomes_low": INTERACTION_OUTCOMES_LOW_ALGO + INTERACTION_OUTCOMES_LOW_HUMAN,
+            "mythological_concepts": {
+                k: MYTHOLOGICAL_CONCEPTS_ALGO[k] + MYTHOLOGICAL_CONCEPTS_HUMAN.get(k, [])
+                for k in MYTHOLOGICAL_CONCEPTS_ALGO
+            },
+            "modality_manifestations": {
+                mod_id: {
+                    level: MODALITY_MANIFESTATIONS_ALGO[mod_id][level]
+                           + " / "
+                           + MODALITY_MANIFESTATIONS_HUMAN[mod_id][level]
+                    for level in ("high", "mid", "low")
+                }
+                for mod_id in MODALITY_MANIFESTATIONS_ALGO
+            },
+            "entity_word": "nœud-individu",
+            "entity_word_plural": "nœuds-individus",
+            "world_word": "réseau-communauté",
+            "tone": "hybride",
+        }

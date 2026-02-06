@@ -5,6 +5,7 @@ import os
 from system.sim.constants import (
     TRAIT_LABELS, ARCHETYPES, INDICATOR_LABELS,
     ARCHETYPE_PROFILES, MODALITY_MANIFESTATIONS,
+    get_cursor_constants,
 )
 
 
@@ -23,7 +24,7 @@ def write_state(output_dir, phase, state_dict):
 
 def write_phase_outputs(output_dir, phase, result, metrics, state,
                         individuals, interactions, modalities_detail,
-                        ordered_mods):
+                        ordered_mods, cc=None):
     """Write all output files for a phase."""
     phase_dir = os.path.join(output_dir, f"phase_{phase}")
     ensure_dir(phase_dir)
@@ -50,11 +51,11 @@ def write_phase_outputs(output_dir, phase, result, metrics, state,
               f"# Récit — Phase {phase}\n\n{result.story}")
 
     # agents.md — now with rich profiles
-    agents_md = _format_agents(phase, individuals)
+    agents_md = _format_agents(phase, individuals, cc)
     _write_md(phase_dir, "agents.md", agents_md)
 
     # interactions.md — now with full narratives
-    inter_md = _format_interactions(phase, interactions)
+    inter_md = _format_interactions(phase, interactions, cc)
     _write_md(phase_dir, "interactions.md", inter_md)
 
     # compte_rendu.md
@@ -72,7 +73,7 @@ def write_phase_outputs(output_dir, phase, result, metrics, state,
               f"# Journal de phase — Phase {phase}\n\n{result.log}")
 
     # modalites.md — now with narrative manifestations
-    mod_content = _format_modalities(phase, modalities_detail, ordered_mods)
+    mod_content = _format_modalities(phase, modalities_detail, ordered_mods, cc)
     _write_md(phase_dir, "modalites.md", mod_content)
 
 
@@ -88,17 +89,23 @@ def _write_md(directory, filename, content):
         f.write(content)
 
 
-def _format_agents(phase, individuals):
+def _format_agents(phase, individuals, cc=None):
     """Format agents with rich narrative profiles."""
+    entity_pl = cc.get("entity_word_plural", "nœuds") if cc else "nœuds"
+    world = cc.get("world_word", "réseau") if cc else "réseau"
+    archetypes = cc["archetypes"] if cc else ARCHETYPES
+    profiles_map = cc["archetype_profiles"] if cc else ARCHETYPE_PROFILES
+    trait_labels = cc["trait_labels"] if cc else TRAIT_LABELS
+
     lines = [f"# Agents — Phase {phase}\n"]
-    lines.append(f"*{len(individuals)} nœuds composent le réseau.*\n")
+    lines.append(f"*{len(individuals)} {entity_pl} composent le {world}.*\n")
 
     for ind in individuals[:50]:
-        archetype = ARCHETYPES.get(
+        archetype = archetypes.get(
             max(ind.traits, key=ind.traits.get) if ind.traits else "",
             "Agent"
         )
-        profile = ARCHETYPE_PROFILES.get(archetype, {})
+        profile = profiles_map.get(archetype, {})
         name = ind.name or f"Node-{ind.id}"
 
         lines.append(f"---\n")
@@ -117,22 +124,22 @@ def _format_agents(phase, individuals):
         sorted_traits = sorted(ind.traits.items(), key=lambda x: -x[1])
         if sorted_traits:
             top = sorted_traits[0]
-            top_label = TRAIT_LABELS.get(top[0], top[0])
+            top_label = trait_labels.get(top[0], top[0])
             lines.append(f"**Trait dominant** : {top_label} ({top[1]:.2f})")
 
             if len(sorted_traits) > 1:
                 second = sorted_traits[1]
-                second_label = TRAIT_LABELS.get(second[0], second[0])
+                second_label = trait_labels.get(second[0], second[0])
                 lines.append(f"**Trait secondaire** : {second_label} ({second[1]:.2f})")
 
             weakest = sorted_traits[-1]
-            weak_label = TRAIT_LABELS.get(weakest[0], weakest[0])
+            weak_label = trait_labels.get(weakest[0], weakest[0])
             lines.append(f"**Point faible** : {weak_label} ({weakest[1]:.2f})")
         lines.append("")
 
         # Full trait table (compact)
         traits_str = " | ".join(
-            f"{TRAIT_LABELS.get(t, t)}: {v:.2f}"
+            f"{trait_labels.get(t, t)}: {v:.2f}"
             for t, v in sorted_traits
         )
         lines.append(f"<details><summary>Tous les traits</summary>\n")
@@ -147,11 +154,11 @@ def _format_agents(phase, individuals):
             lines.append("")
 
     if len(individuals) > 50:
-        lines.append(f"\n---\n*... et {len(individuals) - 50} nœuds supplémentaires dans le réseau.*")
+        lines.append(f"\n---\n*... et {len(individuals) - 50} {entity_pl} supplémentaires dans le {world}.*")
     return "\n".join(lines)
 
 
-def _format_interactions(phase, interactions):
+def _format_interactions(phase, interactions, cc=None):
     """Format interactions with full narrative exchanges."""
     lines = [f"# Interactions — Phase {phase}\n"]
     lines.append(f"*{len(interactions)} échanges observés durant cette phase.*\n")
@@ -184,10 +191,13 @@ def _format_interactions(phase, interactions):
     return "\n".join(lines)
 
 
-def _format_modalities(phase, modalities_detail, ordered_mods):
+def _format_modalities(phase, modalities_detail, ordered_mods, cc=None):
     """Format modalities with narrative manifestations."""
+    manifestations = cc["modality_manifestations"] if cc else MODALITY_MANIFESTATIONS
+    world = cc.get("world_word", "réseau") if cc else "réseau"
+
     lines = [f"# Modalités — Phase {phase}\n"]
-    lines.append("*Comment le monde algorithmique se manifeste concrètement.*\n")
+    lines.append(f"*Comment le {world} se manifeste concrètement.*\n")
 
     for mod_id in ordered_mods:
         mod = modalities_detail[mod_id]
@@ -197,7 +207,7 @@ def _format_modalities(phase, modalities_detail, ordered_mods):
         lines.append(f"**Score global** : {score:.3f}\n")
 
         # Narrative manifestation
-        manifests = MODALITY_MANIFESTATIONS.get(mod_id, {})
+        manifests = manifestations.get(mod_id, {})
         if score > 0.6:
             desc = manifests.get("high", "")
         elif score > 0.35:
