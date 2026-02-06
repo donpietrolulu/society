@@ -198,6 +198,15 @@ def _motif_effect(mod_id):
     return effects.get(mod_id, "effet_neutre")
 
 
+def _next_test_dir(experience_dir):
+    """Find next TestN directory number and return its phases path."""
+    os.makedirs(experience_dir, exist_ok=True)
+    n = 1
+    while os.path.exists(os.path.join(experience_dir, f"Test{n}")):
+        n += 1
+    return os.path.join(experience_dir, f"Test{n}", "phases")
+
+
 def run_simulation(config, seed=None, output_dir=None, data_dir=None,
                    mock=False, no_llm=False, phase_start=1, print_fn=None):
     """Run the full simulation pipeline."""
@@ -209,7 +218,7 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
     if data_dir is None:
         data_dir = os.path.join(base_dir, "data")
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(base_dir), "experience", "Test1", "phases")
+        output_dir = _next_test_dir(os.path.join(os.path.dirname(base_dir), "experience"))
 
     rng = random.Random(seed)
 
