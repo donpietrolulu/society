@@ -11,8 +11,9 @@ def ensure_dir(path):
 
 def write_state(output_dir, phase, state_dict):
     """Write phase state JSON."""
-    ensure_dir(output_dir)
-    path = os.path.join(output_dir, f"phase_{phase}_state.json")
+    phase_dir = os.path.join(output_dir, f"phase_{phase}")
+    ensure_dir(phase_dir)
+    path = os.path.join(phase_dir, "state.json")
     with open(path, "w", encoding="utf-8") as f:
         json.dump(state_dict, f, ensure_ascii=False, indent=2)
 
@@ -21,42 +22,39 @@ def write_phase_outputs(output_dir, phase, result, metrics, state,
                         individuals, interactions, modalities_detail,
                         ordered_mods):
     """Write all output files for a phase."""
-    ensure_dir(output_dir)
-    cr_dir = os.path.join(output_dir, "comptes_rendus")
-    mod_dir = os.path.join(output_dir, "modalites")
-    ensure_dir(cr_dir)
-    ensure_dir(mod_dir)
+    phase_dir = os.path.join(output_dir, f"phase_{phase}")
+    ensure_dir(phase_dir)
 
-    # phase_N_metrics.json
-    _write_json(output_dir, f"phase_{phase}_metrics.json", metrics)
+    # metrics.json
+    _write_json(phase_dir, "metrics.json", metrics)
 
-    # phase_N_checks.json
-    _write_json(output_dir, f"phase_{phase}_checks.json", result.checks)
+    # checks.json
+    _write_json(phase_dir, "checks.json", result.checks)
 
-    # phase_N_state.json
-    _write_json(output_dir, f"phase_{phase}_state.json", state)
+    # state.json
+    _write_json(phase_dir, "state.json", state)
 
-    # phase_N_summary.md
-    _write_md(output_dir, f"phase_{phase}_summary.md",
+    # summary.md
+    _write_md(phase_dir, "summary.md",
               f"# Résumé — Phase {phase}\n\n{result.summary}")
 
-    # phase_N_log.md
-    _write_md(output_dir, f"phase_{phase}_log.md",
+    # log.md
+    _write_md(phase_dir, "log.md",
               f"# Journal — Phase {phase}\n\n{result.log}")
 
-    # phase_N_story.md
-    _write_md(output_dir, f"phase_{phase}_story.md",
+    # story.md
+    _write_md(phase_dir, "story.md",
               f"# Récit — Phase {phase}\n\n{result.story}")
 
-    # phase_N_agents.md
+    # agents.md
     agents_md = _format_agents(phase, individuals)
-    _write_md(output_dir, f"phase_{phase}_agents.md", agents_md)
+    _write_md(phase_dir, "agents.md", agents_md)
 
-    # phase_N_interactions.md
+    # interactions.md
     inter_md = _format_interactions(phase, interactions)
-    _write_md(output_dir, f"phase_{phase}_interactions.md", inter_md)
+    _write_md(phase_dir, "interactions.md", inter_md)
 
-    # comptes_rendus/phase_N_compte_rendu.md
+    # compte_rendu.md
     cr_content = (
         f"# Compte rendu — Phase {phase}\n\n"
         f"## Résumé\n{result.summary}\n\n"
@@ -64,15 +62,15 @@ def write_phase_outputs(output_dir, phase, result, metrics, state,
     )
     for i, scene in enumerate(result.scenes):
         cr_content += f"\n### Vignette {i+1}\n{scene}\n"
-    _write_md(cr_dir, f"phase_{phase}_compte_rendu.md", cr_content)
+    _write_md(phase_dir, "compte_rendu.md", cr_content)
 
-    # comptes_rendus/phase_N_journal.md
-    _write_md(cr_dir, f"phase_{phase}_journal.md",
+    # journal.md
+    _write_md(phase_dir, "journal.md",
               f"# Journal de phase — Phase {phase}\n\n{result.log}")
 
-    # modalites/phase_N_modalites.md
+    # modalites.md
     mod_content = _format_modalities(phase, modalities_detail, ordered_mods)
-    _write_md(mod_dir, f"phase_{phase}_modalites.md", mod_content)
+    _write_md(phase_dir, "modalites.md", mod_content)
 
 
 def _write_json(directory, filename, data):

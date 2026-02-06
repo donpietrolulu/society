@@ -195,24 +195,25 @@ class TestFullSimulation(unittest.TestCase):
             # Check outputs exist
             self.assertEqual(len(history), 4)
             for phase in range(1, 5):
+                phase_dir = os.path.join(output_dir, f"phase_{phase}")
                 self.assertTrue(
-                    os.path.exists(os.path.join(output_dir, f"phase_{phase}_state.json")),
-                    f"phase_{phase}_state.json manquant"
+                    os.path.exists(os.path.join(phase_dir, "state.json")),
+                    f"phase_{phase}/state.json manquant"
                 )
                 self.assertTrue(
-                    os.path.exists(os.path.join(output_dir, f"phase_{phase}_metrics.json")),
-                    f"phase_{phase}_metrics.json manquant"
+                    os.path.exists(os.path.join(phase_dir, "metrics.json")),
+                    f"phase_{phase}/metrics.json manquant"
                 )
                 self.assertTrue(
-                    os.path.exists(os.path.join(output_dir, f"phase_{phase}_summary.md")),
-                    f"phase_{phase}_summary.md manquant"
+                    os.path.exists(os.path.join(phase_dir, "summary.md")),
+                    f"phase_{phase}/summary.md manquant"
                 )
 
-            # Check phase_0_state.json
-            self.assertTrue(os.path.exists(os.path.join(output_dir, "phase_0_state.json")))
+            # Check phase_0/state.json
+            self.assertTrue(os.path.exists(os.path.join(output_dir, "phase_0", "state.json")))
 
             # Check final state metrics are in range
-            with open(os.path.join(output_dir, "phase_4_state.json"), "r") as f:
+            with open(os.path.join(output_dir, "phase_4", "state.json"), "r") as f:
                 state = json.load(f)
             for mod_id, mod in state["modalities"].items():
                 for ind, val in mod["metrics"].items():

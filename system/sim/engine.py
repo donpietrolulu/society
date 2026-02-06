@@ -246,7 +246,7 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
     # Load previous state if phase_start > 1
     history = []
     if phase_start > 1:
-        prev_state_path = os.path.join(output_dir, f"phase_{phase_start - 1}_state.json")
+        prev_state_path = os.path.join(output_dir, f"phase_{phase_start - 1}", "state.json")
         if os.path.exists(prev_state_path):
             with open(prev_state_path, "r", encoding="utf-8") as f:
                 prev = json.load(f)
