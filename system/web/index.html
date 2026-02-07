@@ -3,263 +3,451 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AGENCY — Terminal Web</title>
+<title>AGENCY</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
   :root {
-    --bg: #0c0c0c;
-    --panel: #141418;
-    --border: #2a2a30;
-    --text: #c8c8d0;
-    --dim: #707080;
-    --accent: #4fc3f7;
-    --green: #66bb6a;
-    --red: #ef5350;
-    --orange: #ffa726;
-    --yellow: #ffee58;
+    --bg: #09090b;
+    --bg-raised: #111113;
+    --bg-card: #16161a;
+    --bg-input: #1c1c21;
+    --bg-hover: #1f1f25;
+    --border: #27272a;
+    --border-subtle: #1e1e22;
+    --text: #e4e4e7;
+    --text-secondary: #a1a1aa;
+    --text-muted: #63636e;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    --accent-subtle: rgba(99, 102, 241, 0.08);
+    --green: #22c55e;
+    --green-subtle: rgba(34, 197, 94, 0.12);
+    --red: #ef4444;
+    --red-subtle: rgba(239, 68, 68, 0.12);
+    --orange: #f59e0b;
+    --orange-subtle: rgba(245, 158, 11, 0.12);
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --violet: #8b5cf6;
     --sidebar-w: 260px;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.5);
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
-    font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--bg); color: var(--text);
     height: 100vh; overflow: hidden;
     display: flex; flex-direction: column;
     font-size: 13px;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Top bar */
+  /* ===== TOP BAR ===== */
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
-    background: #1a1a20; border-bottom: 1px solid var(--border);
-    padding: 0 16px; height: 40px; flex-shrink: 0;
+    background: var(--bg-raised);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px; height: 48px; flex-shrink: 0;
+    backdrop-filter: blur(12px);
   }
-  .topbar-title { color: var(--accent); font-weight: bold; font-size: 14px; letter-spacing: 1px; }
-  .topbar-nav { display: flex; gap: 2px; }
+  .topbar-left { display: flex; align-items: center; gap: 20px; }
+  .topbar-logo {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar-logo .logo-icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--violet));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .topbar-logo .logo-text {
+    font-weight: 600; font-size: 15px; color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .topbar-nav { display: flex; gap: 1px; background: var(--bg); border-radius: 8px; padding: 3px; }
   .topbar-nav button {
-    background: transparent; color: var(--dim); border: none;
-    padding: 8px 14px; cursor: pointer; font-family: inherit; font-size: 12px;
-    border-bottom: 2px solid transparent; transition: all 0.15s;
+    background: transparent; color: var(--text-secondary); border: none;
+    padding: 6px 14px; cursor: pointer; font-family: inherit; font-size: 12px;
+    font-weight: 500; border-radius: 6px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
   }
-  .topbar-nav button:hover { color: var(--text); }
-  .topbar-nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .topbar-nav button:hover { color: var(--text); background: var(--bg-hover); }
+  .topbar-nav button.active {
+    color: #fff; background: var(--accent);
+    box-shadow: 0 1px 4px rgba(99, 102, 241, 0.3);
+  }
+  .topbar-nav button .nav-icon { font-size: 14px; }
+  .status-bar {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--text-muted); font-size: 11px; font-weight: 500;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-  /* Main layout */
+  /* ===== MAIN LAYOUT ===== */
   .main { display: flex; flex: 1; overflow: hidden; }
 
-  /* Sidebar */
+  /* ===== SIDEBAR ===== */
   .sidebar {
-    width: var(--sidebar-w); background: var(--panel);
+    width: var(--sidebar-w); background: var(--bg-raised);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
   }
   .sidebar-header {
-    padding: 10px 12px; font-size: 11px; color: var(--dim);
-    text-transform: uppercase; letter-spacing: 1px;
+    padding: 12px 14px; font-size: 11px; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 1.2px; font-weight: 600;
     border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
   }
   .sidebar-header button {
-    background: none; border: none; color: var(--dim); cursor: pointer;
-    font-size: 14px; padding: 0 4px;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text-secondary);
+    cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 4px;
+    transition: all 0.15s;
   }
-  .sidebar-header button:hover { color: var(--text); }
-  .sidebar-content { flex: 1; overflow-y: auto; }
+  .sidebar-header button:hover { color: var(--text); border-color: var(--accent); }
+  .sidebar-content { flex: 1; overflow-y: auto; padding: 4px 0; }
   .file-item {
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px 12px; cursor: pointer; font-size: 12px;
-    color: var(--text); border: none; background: none; width: 100%;
-    text-align: left; font-family: inherit;
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 14px; cursor: pointer; font-size: 12px;
+    color: var(--text-secondary); border: none; background: none; width: 100%;
+    text-align: left; font-family: inherit; transition: all 0.1s;
+    border-left: 2px solid transparent;
   }
-  .file-item:hover { background: rgba(79, 195, 247, 0.08); }
-  .file-item.dir { color: var(--accent); }
-  .file-item .icon { width: 16px; text-align: center; flex-shrink: 0; }
+  .file-item:hover { background: var(--accent-subtle); color: var(--text); border-left-color: var(--accent); }
+  .file-item.dir { color: var(--accent-hover); font-weight: 500; }
+  .file-item .icon { width: 18px; text-align: center; flex-shrink: 0; font-size: 13px; }
   .file-item .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .file-item .size { color: var(--dim); font-size: 11px; }
+  .file-item .size { color: var(--text-muted); font-size: 10px; font-family: 'JetBrains Mono', monospace; }
   .breadcrumb {
-    padding: 6px 12px; font-size: 11px; color: var(--dim);
-    background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border);
+    padding: 8px 14px; font-size: 11px; color: var(--text-muted);
+    background: var(--bg); border-bottom: 1px solid var(--border-subtle);
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
   }
-  .breadcrumb span { cursor: pointer; color: var(--accent); }
+  .breadcrumb span { cursor: pointer; color: var(--accent-hover); }
   .breadcrumb span:hover { text-decoration: underline; }
 
-  /* Content area */
+  /* ===== CONTENT ===== */
   .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-
-  /* Tab panels */
   .tab-panel { flex: 1; display: none; flex-direction: column; overflow: hidden; }
   .tab-panel.active { display: flex; }
 
-  /* Terminal */
+  /* ===== TERMINAL ===== */
   .terminal-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .terminal-output {
-    flex: 1; overflow-y: auto; padding: 12px; font-size: 13px;
-    line-height: 1.5; background: var(--bg);
+    flex: 1; overflow-y: auto; padding: 16px 20px; font-size: 13px;
+    line-height: 1.7; background: var(--bg);
+    font-family: 'JetBrains Mono', monospace;
   }
-  .terminal-output .cmd-line { color: var(--green); }
-  .terminal-output .cmd-line .prompt { color: var(--accent); }
-  .terminal-output .cmd-output { color: var(--text); white-space: pre-wrap; word-break: break-all; }
-  .terminal-output .cmd-error { color: var(--red); }
-  .terminal-output .cmd-info { color: var(--dim); font-style: italic; }
+  .terminal-output .cmd-line {
+    color: var(--green); margin-top: 12px;
+    padding: 2px 0;
+  }
+  .terminal-output .cmd-line .prompt { color: var(--accent-hover); font-weight: 500; }
+  .terminal-output .cmd-output {
+    color: var(--text-secondary); white-space: pre-wrap; word-break: break-all;
+    padding: 4px 0 4px 16px; border-left: 2px solid var(--border-subtle);
+    margin: 4px 0 4px 4px;
+  }
+  .terminal-output .cmd-error {
+    color: var(--red); white-space: pre-wrap;
+    padding: 4px 0 4px 16px; border-left: 2px solid var(--red);
+    margin: 4px 0 4px 4px; background: var(--red-subtle); border-radius: 0 4px 4px 0;
+  }
+  .terminal-output .cmd-info { color: var(--text-muted); font-size: 12px; }
+
+  .quick-bar {
+    padding: 8px 16px; background: var(--bg-raised);
+    border-top: 1px solid var(--border); display: flex; gap: 6px;
+    flex-wrap: wrap; align-items: center;
+  }
+  .quick-bar-label { color: var(--text-muted); font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-right: 4px; }
+  .quick-btn {
+    background: var(--bg); color: var(--text-secondary);
+    border: 1px solid var(--border); padding: 4px 10px;
+    border-radius: 5px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; transition: all 0.15s;
+  }
+  .quick-btn:hover {
+    color: var(--text); border-color: var(--accent);
+    background: var(--accent-subtle); box-shadow: 0 0 8px var(--accent-glow);
+  }
+
   .terminal-input-row {
     display: flex; align-items: center;
     border-top: 1px solid var(--border);
-    background: #111116; padding: 0; flex-shrink: 0;
+    background: var(--bg-card); padding: 0; flex-shrink: 0;
   }
   .terminal-prompt {
-    padding: 10px 4px 10px 12px; color: var(--accent);
-    white-space: nowrap; font-size: 13px;
+    padding: 12px 6px 12px 16px; color: var(--accent);
+    white-space: nowrap; font-size: 13px; font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
   }
   .terminal-input {
     flex: 1; background: transparent; border: none; color: var(--text);
-    font-family: inherit; font-size: 13px; padding: 10px 12px 10px 4px;
-    outline: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    padding: 12px 16px 12px 6px; outline: none;
   }
+  .terminal-input::placeholder { color: var(--text-muted); }
 
-  /* Simulation panel */
-  .sim-panel { padding: 20px; overflow-y: auto; }
-  .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 800px; }
-  .sim-card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 6px; padding: 16px;
+  /* ===== SIMULATION PANEL ===== */
+  .sim-panel { padding: 24px; overflow-y: auto; }
+  .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 900px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); transition: border-color 0.2s;
   }
-  .sim-card h3 { color: var(--accent); font-size: 13px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .sim-card.full { grid-column: 1 / -1; }
-  .form-row { display: flex; gap: 10px; margin-bottom: 8px; }
-  .form-row > * { flex: 1; }
-  .form-group { margin-bottom: 8px; }
-  .form-group label { display: block; color: var(--dim); font-size: 11px; margin-bottom: 3px; text-transform: uppercase; }
-  .form-group input, .form-group select {
-    width: 100%; background: #1a1a20; color: var(--text);
-    border: 1px solid var(--border); padding: 6px 10px;
-    border-radius: 3px; font-family: inherit; font-size: 12px;
-  }
-  .form-group input:focus { border-color: var(--accent); outline: none; }
-  .checkbox-row { display: flex; gap: 16px; align-items: center; margin: 8px 0; }
-  .checkbox-row label { color: var(--text); font-size: 12px; display: flex; align-items: center; gap: 4px; cursor: pointer; }
-  .checkbox-row input[type="checkbox"] { accent-color: var(--accent); }
-
-  /* Buttons */
-  .btn {
-    background: #1e5128; color: #b8e6b8; border: 1px solid #2e7d32;
-    padding: 7px 18px; border-radius: 4px; cursor: pointer;
-    font-family: inherit; font-size: 12px; transition: all 0.15s;
-  }
-  .btn:hover { background: #2e7d32; color: #fff; }
-  .btn-secondary { background: #1a2a3a; color: #90caf9; border-color: #1565c0; }
-  .btn-secondary:hover { background: #1565c0; color: #fff; }
-  .btn-warn { background: #3e2723; color: #ffab91; border-color: #bf360c; }
-  .btn-warn:hover { background: #bf360c; color: #fff; }
-  .btn-small { padding: 4px 10px; font-size: 11px; }
-  .btn-row { display: flex; gap: 8px; margin-top: 10px; }
-
-  /* Jobs list */
-  .job-item {
+  .card:hover { border-color: #3a3a42; }
+  .card-header {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 0; border-bottom: 1px solid var(--border);
-    cursor: pointer; font-size: 12px;
+    margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .job-item:hover { background: rgba(79, 195, 247, 0.05); }
+  .card-header .card-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .card-header h3 {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    letter-spacing: 0.3px;
+  }
+  .card-header .card-badge {
+    margin-left: auto; font-size: 10px; padding: 2px 8px;
+    border-radius: 10px; font-weight: 600;
+  }
+  .card.full { grid-column: 1 / -1; }
+
+  .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .form-row > * { flex: 1; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block; color: var(--text-secondary); font-size: 11px;
+    margin-bottom: 5px; font-weight: 500;
+  }
+  .form-group input, .form-group select {
+    width: 100%; background: var(--bg-input); color: var(--text);
+    border: 1px solid var(--border); padding: 8px 12px;
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 12px;
+    transition: all 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--accent); outline: none;
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-group input::placeholder { color: var(--text-muted); }
+
+  .checkbox-row { display: flex; gap: 16px; align-items: center; margin: 12px 0; }
+  .toggle-label {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--text-secondary); font-size: 12px; cursor: pointer;
+    padding: 4px 10px; border-radius: 6px; transition: all 0.15s;
+  }
+  .toggle-label:hover { background: var(--bg-hover); color: var(--text); }
+  .toggle-label input[type="checkbox"] {
+    width: 16px; height: 16px; accent-color: var(--accent);
+    border-radius: 3px; cursor: pointer;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #fff;
+    border: none; padding: 8px 18px; border-radius: var(--radius-sm);
+    cursor: pointer; font-family: inherit; font-size: 12px;
+    font-weight: 500; transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+  }
+  .btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); }
+  .btn:active { transform: translateY(0); }
+  .btn-ghost {
+    background: transparent; color: var(--text-secondary);
+    border: 1px solid var(--border); box-shadow: none;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); background: var(--accent-subtle); box-shadow: none; transform: none; }
+  .btn-success { background: var(--green); box-shadow: 0 1px 3px rgba(34, 197, 94, 0.3); }
+  .btn-success:hover { background: #16a34a; box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4); }
+  .btn-sm { padding: 5px 12px; font-size: 11px; border-radius: 5px; }
+  .btn-row { display: flex; gap: 8px; margin-top: 14px; }
+
+  /* ===== JOBS ===== */
+  .job-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 12px; margin: 3px 0;
+    transition: all 0.1s; border: 1px solid transparent;
+  }
+  .job-item:hover { background: var(--bg-hover); border-color: var(--border); }
   .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 3px;
-    font-size: 10px; text-transform: uppercase; font-weight: bold;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 12px;
+    font-size: 10px; text-transform: uppercase; font-weight: 600;
+    letter-spacing: 0.5px;
   }
-  .badge-running { background: #e65100; color: #fff; }
-  .badge-completed { background: #2e7d32; color: #fff; }
-  .badge-failed { background: #c62828; color: #fff; }
+  .badge-running { background: var(--orange-subtle); color: var(--orange); }
+  .badge-completed { background: var(--green-subtle); color: var(--green); }
+  .badge-failed { background: var(--red-subtle); color: var(--red); }
+  .badge-running::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--orange); animation: pulse 1.5s infinite; }
 
-  /* Log viewer */
+  /* ===== LOG VIEWER ===== */
   .log-viewer {
-    background: #0a0a0e; border: 1px solid var(--border); border-radius: 4px;
-    padding: 10px; max-height: 400px; overflow-y: auto;
-    white-space: pre-wrap; font-size: 12px; color: #aaa;
-    line-height: 1.6;
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 14px; max-height: 400px; overflow-y: auto;
+    white-space: pre-wrap; font-size: 12px; color: var(--text-secondary);
+    line-height: 1.7; font-family: 'JetBrains Mono', monospace;
   }
 
-  /* File editor */
+  /* ===== VALIDATION ===== */
+  .validate-section {
+    display: flex; align-items: center; gap: 10px; padding: 4px 0;
+  }
+  .validate-section input {
+    width: 56px; background: var(--bg-input); color: var(--text);
+    border: 1px solid var(--border); padding: 8px;
+    border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; text-align: center; font-weight: 600;
+  }
+  .validate-section input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-glow); }
+  .validate-msg {
+    font-size: 12px; margin-top: 8px; padding: 6px 10px;
+    border-radius: 5px; display: none;
+  }
+  .validate-msg.show { display: block; background: var(--green-subtle); color: var(--green); }
+
+  /* ===== EDITOR ===== */
   .editor-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .editor-toolbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 12px; background: #1a1a20;
+    padding: 8px 16px; background: var(--bg-raised);
     border-bottom: 1px solid var(--border); flex-shrink: 0;
   }
-  .editor-toolbar .path { color: var(--dim); font-size: 12px; }
+  .editor-toolbar .path {
+    color: var(--text-muted); font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .editor-toolbar .path .file-badge {
+    background: var(--accent-subtle); color: var(--accent-hover);
+    padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+  }
   .editor-textarea {
     flex: 1; background: var(--bg); color: var(--text);
-    border: none; padding: 12px; font-family: inherit;
-    font-size: 13px; line-height: 1.5; resize: none; outline: none;
+    border: none; padding: 16px 20px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.6; resize: none; outline: none;
     tab-size: 4;
   }
 
-  /* Metrics panel */
-  .metrics-panel { padding: 20px; overflow-y: auto; }
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 16px; }
+  /* ===== METRICS ===== */
+  .metrics-panel { padding: 24px; overflow-y: auto; }
+  .metrics-toolbar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    padding: 12px 16px; background: var(--bg-card); border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .metrics-toolbar label { color: var(--text-secondary); font-size: 12px; font-weight: 500; }
+  .metrics-toolbar select {
+    background: var(--bg-input); color: var(--text);
+    border: 1px solid var(--border); padding: 6px 12px;
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 12px;
+  }
+  .metrics-toolbar select:focus { border-color: var(--accent); outline: none; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
   .modality-card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 6px; padding: 16px;
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    box-shadow: var(--shadow); transition: all 0.2s;
+    position: relative; overflow: hidden;
   }
-  .modality-card h3 { color: var(--accent); font-size: 13px; margin-bottom: 8px; }
-  .modality-card .score { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+  .modality-card:hover { border-color: #3a3a42; transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .modality-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px; border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .modality-card h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .modality-card .score-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+  .modality-card .score { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+  .modality-card .score-pct { font-size: 12px; color: var(--text-muted); }
   .indicator-row {
-    display: flex; align-items: center; gap: 8px;
-    margin: 4px 0; font-size: 12px;
-  }
-  .indicator-row .label { flex: 1; color: var(--dim); }
-  .indicator-row .value { width: 45px; text-align: right; }
-  .bar-wrap { width: 100px; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-
-  /* Validation panel */
-  .validate-section {
     display: flex; align-items: center; gap: 10px;
-    padding: 12px 0;
+    margin: 6px 0; font-size: 12px;
   }
-  .validate-section input {
-    width: 60px; background: #1a1a20; color: var(--text);
-    border: 1px solid var(--border); padding: 6px 10px;
-    border-radius: 3px; font-family: inherit; font-size: 12px; text-align: center;
-  }
+  .indicator-row .label { flex: 1; color: var(--text-secondary); font-weight: 400; }
+  .indicator-row .value { width: 50px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; }
+  .bar-wrap { width: 80px; height: 4px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
-  /* Quick actions */
-  .quick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .quick-btn {
-    background: #1a1a24; color: var(--dim); border: 1px solid var(--border);
-    padding: 5px 12px; border-radius: 3px; cursor: pointer;
-    font-family: inherit; font-size: 11px; transition: all 0.15s;
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px; color: var(--text-muted); text-align: center;
   }
-  .quick-btn:hover { color: var(--text); border-color: var(--accent); background: rgba(79, 195, 247, 0.08); }
+  .empty-state .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 13px; max-width: 300px; line-height: 1.6; }
 
-  /* Scrollbar */
+  /* ===== SCROLLBAR ===== */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: #555; }
+  ::-webkit-scrollbar-thumb { background: #2a2a30; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a42; }
 
-  /* Responsive */
+  /* ===== RESPONSIVE ===== */
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .sim-grid { grid-template-columns: 1fr; }
+    .topbar-nav button span.nav-label { display: none; }
   }
+
+  /* ===== TRANSITIONS ===== */
+  .fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="topbar-title">AGENCY</div>
-  <div class="topbar-nav">
-    <button class="active" onclick="switchTab('terminal')">Terminal</button>
-    <button onclick="switchTab('simulation')">Simulation</button>
-    <button onclick="switchTab('metrics')">Metriques</button>
-    <button onclick="switchTab('editor')">Editeur</button>
+  <div class="topbar-left">
+    <div class="topbar-logo">
+      <div class="logo-icon">A</div>
+      <span class="logo-text">AGENCY</span>
+    </div>
+    <div class="topbar-nav">
+      <button class="active" onclick="switchTab('terminal', this)">
+        <span class="nav-icon">&#9002;</span><span class="nav-label">Terminal</span>
+      </button>
+      <button onclick="switchTab('simulation', this)">
+        <span class="nav-icon">&#9881;</span><span class="nav-label">Simulation</span>
+      </button>
+      <button onclick="switchTab('metrics', this)">
+        <span class="nav-icon">&#9636;</span><span class="nav-label">Metriques</span>
+      </button>
+      <button onclick="switchTab('editor', this)">
+        <span class="nav-icon">&#9998;</span><span class="nav-label">Editeur</span>
+      </button>
+    </div>
   </div>
-  <div style="color:var(--dim);font-size:11px" id="statusBar">Pret</div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <span id="statusBar">Pret</span>
+  </div>
 </div>
 
 <div class="main">
-  <!-- Sidebar: file browser -->
+  <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <span>Fichiers</span>
+      <span>Explorateur</span>
       <button onclick="browseDir(projectDir)" title="Racine du projet">&#8962;</button>
     </div>
     <div class="breadcrumb" id="breadcrumb"></div>
@@ -272,20 +460,18 @@
     <div class="tab-panel active" id="tab-terminal">
       <div class="terminal-wrap">
         <div class="terminal-output" id="termOutput">
-          <div class="cmd-info">AGENCY Web Terminal — tapez vos commandes ci-dessous.</div>
-          <div class="cmd-info">Raccourcis: Ctrl+L (clear), Up/Down (historique)</div>
-          <div class="cmd-info" style="margin-bottom:8px">---</div>
+          <div class="cmd-info">Bienvenue dans AGENCY Web Terminal</div>
+          <div class="cmd-info">Raccourcis : Ctrl+L (clear) | Haut/Bas (historique) | Ctrl+` (focus terminal)</div>
+          <div class="cmd-info" style="margin-bottom:8px"></div>
         </div>
-        <div style="padding:4px 12px;background:#111116;border-top:1px solid var(--border)">
-          <div class="quick-actions">
-            <button class="quick-btn" onclick="quickCmd('python -m system.sim run --mock --seed 42')">Simulation mock</button>
-            <button class="quick-btn" onclick="quickCmd('python -m unittest system.tests.test_simulation -v')">Tests</button>
-            <button class="quick-btn" onclick="quickCmd('ls -la')">ls -la</button>
-            <button class="quick-btn" onclick="quickCmd('git status')">git status</button>
-            <button class="quick-btn" onclick="quickCmd('git log --oneline -10')">git log</button>
-            <button class="quick-btn" onclick="quickCmd('python -m system.web.app')">Serveur web</button>
-            <button class="quick-btn" onclick="quickCmd('cat system/config/defaults.json')">Config</button>
-          </div>
+        <div class="quick-bar">
+          <span class="quick-bar-label">Raccourcis</span>
+          <button class="quick-btn" onclick="quickCmd('python -m system.sim run --mock --seed 42')">sim mock</button>
+          <button class="quick-btn" onclick="quickCmd('python -m unittest system.tests.test_simulation -v')">tests</button>
+          <button class="quick-btn" onclick="quickCmd('ls -la')">ls</button>
+          <button class="quick-btn" onclick="quickCmd('git status')">git status</button>
+          <button class="quick-btn" onclick="quickCmd('git log --oneline -10')">git log</button>
+          <button class="quick-btn" onclick="quickCmd('cat system/config/defaults.json')">config</button>
         </div>
         <div class="terminal-input-row">
           <div class="terminal-prompt" id="termPrompt">~/society $</div>
@@ -302,12 +488,15 @@
       <div class="sim-panel">
         <div class="sim-grid">
 
-          <div class="sim-card">
-            <h3>Configuration</h3>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon" style="background:var(--accent-subtle);color:var(--accent)">&#9881;</div>
+              <h3>Configuration</h3>
+            </div>
             <div class="form-row">
               <div class="form-group">
                 <label>Seed</label>
-                <input type="number" id="simSeed" placeholder="optionnel">
+                <input type="number" id="simSeed" placeholder="aleatoire">
               </div>
               <div class="form-group">
                 <label>Phase de depart</label>
@@ -315,56 +504,72 @@
               </div>
             </div>
             <div class="form-group">
-              <label>Config (JSON)</label>
-              <input type="text" id="simConfig" placeholder="chemin optionnel">
+              <label>Fichier config (JSON)</label>
+              <input type="text" id="simConfig" placeholder="optionnel">
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label>Output dir</label>
-                <input type="text" id="simOutputDir" value="">
+                <label>Dossier de sortie</label>
+                <input type="text" id="simOutputDir" placeholder="auto">
               </div>
               <div class="form-group">
-                <label>Data dir</label>
-                <input type="text" id="simDataDir" value="">
+                <label>Dossier data</label>
+                <input type="text" id="simDataDir" placeholder="par defaut">
               </div>
             </div>
             <div class="checkbox-row">
-              <label><input type="checkbox" id="simMock"> Mode Mock</label>
-              <label><input type="checkbox" id="simNoLlm"> Sans LLM</label>
+              <label class="toggle-label"><input type="checkbox" id="simMock"> Mode Mock</label>
+              <label class="toggle-label"><input type="checkbox" id="simNoLlm"> Sans LLM</label>
             </div>
             <div class="btn-row">
               <button class="btn" onclick="startSimulation()">Lancer la simulation</button>
-              <button class="btn btn-secondary" onclick="runTests()">Lancer les tests</button>
+              <button class="btn btn-ghost" onclick="runTests()">Lancer les tests</button>
             </div>
           </div>
 
-          <div class="sim-card">
-            <h3>Validation de phase</h3>
-            <p style="color:var(--dim);font-size:12px;margin-bottom:10px">
-              Validez une phase pour permettre a la simulation de continuer.
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon" style="background:var(--green-subtle);color:var(--green)">&#10003;</div>
+              <h3>Validation</h3>
+            </div>
+            <p style="color:var(--text-muted);font-size:12px;margin-bottom:14px;line-height:1.5">
+              Validez une phase pour permettre a la simulation de passer a la suivante.
             </p>
             <div class="validate-section">
-              <span style="color:var(--dim);font-size:12px">Phase :</span>
+              <label style="color:var(--text-secondary);font-size:12px;font-weight:500">Phase</label>
               <input type="number" id="valPhase" value="1" min="1" max="10">
-              <button class="btn" onclick="validatePhase()">Valider</button>
+              <button class="btn btn-success btn-sm" onclick="validatePhase()">Valider</button>
             </div>
-            <div id="valStatus" style="color:var(--green);font-size:12px;margin-top:6px"></div>
+            <div class="validate-msg" id="valStatus"></div>
           </div>
 
-          <div class="sim-card full">
-            <h3>Jobs actifs</h3>
-            <div id="jobsList"><span style="color:var(--dim)">Aucun job.</span></div>
+          <div class="card full">
+            <div class="card-header">
+              <div class="card-icon" style="background:var(--orange-subtle);color:var(--orange)">&#9656;</div>
+              <h3>Jobs</h3>
+            </div>
+            <div id="jobsList">
+              <div class="empty-state"><p>Aucun job en cours. Lancez une simulation ou des tests.</p></div>
+            </div>
           </div>
 
-          <div class="sim-card full">
-            <h3>Log du job selectionne</h3>
-            <div class="log-viewer" id="jobLog">Selectionnez un job ci-dessus.</div>
+          <div class="card full">
+            <div class="card-header">
+              <div class="card-icon" style="background:var(--accent-subtle);color:var(--accent)">&#9776;</div>
+              <h3>Logs</h3>
+            </div>
+            <div class="log-viewer" id="jobLog">En attente d'un job...</div>
           </div>
 
-          <div class="sim-card full">
-            <h3>Fichiers de sortie</h3>
-            <button class="btn btn-small btn-secondary" onclick="refreshOutputs()" style="margin-bottom:8px">Rafraichir</button>
-            <div id="outputFilesList" style="font-size:12px;color:var(--dim)">Aucun fichier.</div>
+          <div class="card full">
+            <div class="card-header">
+              <div class="card-icon" style="background:rgba(6,182,212,0.12);color:var(--cyan)">&#128193;</div>
+              <h3>Fichiers de sortie</h3>
+              <button class="btn btn-ghost btn-sm" onclick="refreshOutputs()" style="margin-left:auto">Rafraichir</button>
+            </div>
+            <div id="outputFilesList">
+              <div class="empty-state"><p>Aucun fichier de sortie pour le moment.</p></div>
+            </div>
           </div>
 
         </div>
@@ -374,14 +579,19 @@
     <!-- TAB: Metrics -->
     <div class="tab-panel" id="tab-metrics">
       <div class="metrics-panel">
-        <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
-          <span style="color:var(--dim);font-size:12px">Phase :</span>
-          <select id="metricsPhaseSelect" onchange="loadMetrics()" style="background:#1a1a20;color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:3px;font-family:inherit;font-size:12px">
-            <option value="">-- Charger les metriques --</option>
+        <div class="metrics-toolbar">
+          <label>Phase :</label>
+          <select id="metricsPhaseSelect" onchange="loadMetrics()">
+            <option value="">-- Choisir une phase --</option>
           </select>
-          <button class="btn btn-small btn-secondary" onclick="detectPhases()">Detecter les phases</button>
+          <button class="btn btn-ghost btn-sm" onclick="detectPhases()">Detecter les phases</button>
         </div>
-        <div class="metrics-grid" id="metricsGrid"></div>
+        <div class="metrics-grid" id="metricsGrid">
+          <div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">&#9636;</div>
+            <p>Lancez une simulation puis cliquez sur "Detecter les phases" pour visualiser les metriques.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -389,12 +599,18 @@
     <div class="tab-panel" id="tab-editor">
       <div class="editor-wrap">
         <div class="editor-toolbar">
-          <div class="path" id="editorPath">Aucun fichier ouvert — cliquez sur un fichier dans l'arborescence</div>
+          <div class="path" id="editorPath">
+            Selectionnez un fichier dans l'explorateur
+          </div>
           <div>
-            <button class="btn btn-small" onclick="saveFile()" id="saveBtn" style="display:none">Sauvegarder</button>
+            <button class="btn btn-sm" onclick="saveFile()" id="saveBtn" style="display:none">
+              Sauvegarder
+            </button>
           </div>
         </div>
-        <textarea class="editor-textarea" id="editorArea" placeholder="Selectionnez un fichier..." readonly></textarea>
+        <textarea class="editor-textarea" id="editorArea"
+                  placeholder="Cliquez sur un fichier dans l'arborescence pour l'ouvrir ici..."
+                  readonly></textarea>
       </div>
     </div>
 
@@ -411,7 +627,7 @@ let cmdHistoryIdx = -1;
 let currentJobId = null;
 let pollInterval = null;
 
-/* ===== API helper ===== */
+/* ===== API ===== */
 async function api(method, path, body) {
   const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
@@ -419,13 +635,23 @@ async function api(method, path, body) {
   return r.json();
 }
 
-/* ===== Tab switching ===== */
-function switchTab(name) {
+/* ===== Tabs ===== */
+function switchTab(name, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.topbar-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'terminal') document.getElementById('termInput').focus();
+  if (btn) btn.classList.add('active');
+  if (name === 'terminal') setTimeout(() => document.getElementById('termInput').focus(), 50);
+}
+
+function switchTabDirect(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.topbar-nav button').forEach(b => {
+    b.classList.remove('active');
+    if (b.querySelector('.nav-label') && b.querySelector('.nav-label').textContent.toLowerCase().startsWith(name.substring(0, 4)))
+      b.classList.add('active');
+  });
+  document.getElementById('tab-' + name).classList.add('active');
 }
 
 /* ===== Terminal ===== */
@@ -435,16 +661,13 @@ async function execCommand(cmd) {
   if (!cmd.trim() || termBusy) return;
   termBusy = true;
   setStatus('Execution...');
-
   const output = document.getElementById('termOutput');
 
-  // Add command line
   const cmdDiv = document.createElement('div');
-  cmdDiv.className = 'cmd-line';
+  cmdDiv.className = 'cmd-line fade-in';
   cmdDiv.innerHTML = `<span class="prompt">${escHtml(document.getElementById('termPrompt').textContent)} </span>${escHtml(cmd)}`;
   output.appendChild(cmdDiv);
 
-  // Handle local clear
   if (cmd.trim() === 'clear') {
     output.innerHTML = '';
     termBusy = false;
@@ -456,22 +679,20 @@ async function execCommand(cmd) {
     const res = await api('POST', '/api/terminal/exec', { command: cmd });
     if (res.output) {
       const outDiv = document.createElement('div');
-      outDiv.className = res.return_code === 0 ? 'cmd-output' : 'cmd-error';
+      outDiv.className = (res.return_code === 0 ? 'cmd-output' : 'cmd-error') + ' fade-in';
       outDiv.textContent = res.output;
       output.appendChild(outDiv);
     }
-    // Update prompt with cwd
     if (res.cwd) {
       const short = res.cwd.replace(/^\/home\/[^/]+/, '~');
       document.getElementById('termPrompt').textContent = short + ' $';
     }
   } catch (e) {
     const errDiv = document.createElement('div');
-    errDiv.className = 'cmd-error';
+    errDiv.className = 'cmd-error fade-in';
     errDiv.textContent = 'Erreur de connexion: ' + e.message;
     output.appendChild(errDiv);
   }
-
   output.scrollTop = output.scrollHeight;
   termBusy = false;
   setStatus('Pret');
@@ -479,29 +700,16 @@ async function execCommand(cmd) {
 
 function handleTermKey(e) {
   if (e.key === 'Enter') {
-    const input = e.target;
-    const cmd = input.value;
-    if (cmd.trim()) {
-      cmdHistory.unshift(cmd);
-      cmdHistoryIdx = -1;
-      execCommand(cmd);
-    }
-    input.value = '';
+    const cmd = e.target.value;
+    if (cmd.trim()) { cmdHistory.unshift(cmd); cmdHistoryIdx = -1; execCommand(cmd); }
+    e.target.value = '';
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
-    if (cmdHistoryIdx < cmdHistory.length - 1) {
-      cmdHistoryIdx++;
-      e.target.value = cmdHistory[cmdHistoryIdx];
-    }
+    if (cmdHistoryIdx < cmdHistory.length - 1) { cmdHistoryIdx++; e.target.value = cmdHistory[cmdHistoryIdx]; }
   } else if (e.key === 'ArrowDown') {
     e.preventDefault();
-    if (cmdHistoryIdx > 0) {
-      cmdHistoryIdx--;
-      e.target.value = cmdHistory[cmdHistoryIdx];
-    } else {
-      cmdHistoryIdx = -1;
-      e.target.value = '';
-    }
+    if (cmdHistoryIdx > 0) { cmdHistoryIdx--; e.target.value = cmdHistory[cmdHistoryIdx]; }
+    else { cmdHistoryIdx = -1; e.target.value = ''; }
   } else if (e.key === 'l' && e.ctrlKey) {
     e.preventDefault();
     document.getElementById('termOutput').innerHTML = '';
@@ -518,23 +726,19 @@ async function browseDir(path) {
   try {
     const res = await api('GET', '/api/browse?path=' + encodeURIComponent(path));
     if (res.error) { setStatus('Erreur: ' + res.error); return; }
-
     currentBrowsePath = res.path;
     updateBreadcrumb(res.path);
-
     const tree = document.getElementById('fileTree');
     tree.innerHTML = '';
 
-    // Parent dir
     if (res.parent && res.parent !== res.path) {
       const el = document.createElement('button');
       el.className = 'file-item dir';
-      el.innerHTML = '<span class="icon">..</span><span class="name">..</span>';
+      el.innerHTML = '<span class="icon">&#8617;</span><span class="name">..</span>';
       el.onclick = () => browseDir(res.parent);
       tree.appendChild(el);
     }
 
-    // Dirs first, then files
     const dirs = res.entries.filter(e => e.is_dir);
     const files = res.entries.filter(e => !e.is_dir);
 
@@ -545,34 +749,26 @@ async function browseDir(path) {
       el.onclick = () => browseDir(entry.path);
       tree.appendChild(el);
     });
-
     files.forEach(entry => {
       const el = document.createElement('button');
       el.className = 'file-item';
-      const icon = fileIcon(entry.name);
-      const size = formatSize(entry.size);
-      el.innerHTML = `<span class="icon">${icon}</span><span class="name">${escHtml(entry.name)}</span><span class="size">${size}</span>`;
+      el.innerHTML = `<span class="icon">${fileIcon(entry.name)}</span><span class="name">${escHtml(entry.name)}</span><span class="size">${formatSize(entry.size)}</span>`;
       el.onclick = () => openFile(entry.path);
       tree.appendChild(el);
     });
-  } catch (e) {
-    setStatus('Erreur browse: ' + e.message);
-  }
+  } catch (e) { setStatus('Erreur: ' + e.message); }
 }
 
 function updateBreadcrumb(path) {
   const bc = document.getElementById('breadcrumb');
   const parts = path.split('/').filter(Boolean);
-  let html = '';
-  let acc = '';
+  let html = '', acc = '';
   parts.forEach((p, i) => {
     acc += '/' + p;
     const full = acc;
-    if (i === parts.length - 1) {
-      html += '/' + escHtml(p);
-    } else {
-      html += `/<span onclick="browseDir('${full}')">${escHtml(p)}</span>`;
-    }
+    html += i === parts.length - 1
+      ? '/' + escHtml(p)
+      : `/<span onclick="browseDir('${full}')">${escHtml(p)}</span>`;
   });
   bc.innerHTML = html;
 }
@@ -582,19 +778,17 @@ async function openFile(path) {
     setStatus('Chargement...');
     const res = await api('GET', '/api/file?path=' + encodeURIComponent(path));
     if (res.error) { setStatus(res.error); return; }
-
     currentEditPath = res.path;
-    document.getElementById('editorPath').textContent = res.path;
+    const fname = path.split('/').pop();
+    const ext = fname.split('.').pop().toUpperCase();
+    document.getElementById('editorPath').innerHTML =
+      `<span class="file-badge">${escHtml(ext)}</span> ${escHtml(res.path)}`;
     document.getElementById('editorArea').value = res.content;
     document.getElementById('editorArea').readOnly = false;
     document.getElementById('saveBtn').style.display = '';
-
-    // Switch to editor tab
     switchTabDirect('editor');
-    setStatus('Fichier ouvert: ' + path.split('/').pop());
-  } catch (e) {
-    setStatus('Erreur: ' + e.message);
-  }
+    setStatus('Ouvert: ' + fname);
+  } catch (e) { setStatus('Erreur: ' + e.message); }
 }
 
 async function saveFile() {
@@ -604,10 +798,8 @@ async function saveFile() {
     const content = document.getElementById('editorArea').value;
     const res = await api('POST', '/api/file/save', { path: currentEditPath, content });
     if (res.error) { setStatus('Erreur: ' + res.error); return; }
-    setStatus('Sauvegarde: ' + currentEditPath.split('/').pop());
-  } catch (e) {
-    setStatus('Erreur: ' + e.message);
-  }
+    setStatus('Sauvegarde OK');
+  } catch (e) { setStatus('Erreur: ' + e.message); }
 }
 
 /* ===== Simulation ===== */
@@ -625,20 +817,17 @@ async function startSimulation() {
   if (od) body.output_dir = od;
   const dd = document.getElementById('simDataDir').value.trim();
   if (dd) body.data_dir = dd;
-
-  setStatus('Lancement de la simulation...');
+  setStatus('Lancement...');
   const res = await api('POST', '/api/simulate', body);
   currentJobId = res.job_id;
-  startPolling();
-  refreshJobs();
+  startPolling(); refreshJobs();
 }
 
 async function runTests() {
-  setStatus('Lancement des tests...');
+  setStatus('Tests...');
   const res = await api('POST', '/api/test', {});
   currentJobId = res.job_id;
-  startPolling();
-  refreshJobs();
+  startPolling(); refreshJobs();
 }
 
 async function validatePhase() {
@@ -646,25 +835,29 @@ async function validatePhase() {
   const od = document.getElementById('simOutputDir').value.trim();
   const body = { phase };
   if (od) body.output_dir = od;
-  const res = await api('POST', '/api/validate', body);
-  document.getElementById('valStatus').textContent = `Phase ${phase} validee.`;
-  setTimeout(() => document.getElementById('valStatus').textContent = '', 3000);
+  await api('POST', '/api/validate', body);
+  const msg = document.getElementById('valStatus');
+  msg.textContent = `Phase ${phase} validee avec succes.`;
+  msg.classList.add('show');
+  setTimeout(() => msg.classList.remove('show'), 3000);
 }
 
 async function refreshJobs() {
-  const res = await api('GET', '/api/jobs');
-  const el = document.getElementById('jobsList');
-  if (!res.jobs || !res.jobs.length) {
-    el.innerHTML = '<span style="color:var(--dim)">Aucun job.</span>';
-    return;
-  }
-  el.innerHTML = res.jobs.map(j => `
-    <div class="job-item" onclick="selectJob('${j.id}')">
-      <span class="badge badge-${j.status}">${j.status}</span>
-      <code>${j.id}</code>
-      <span style="color:var(--dim)">${j.started}</span>
-    </div>
-  `).join('');
+  try {
+    const res = await api('GET', '/api/jobs');
+    const el = document.getElementById('jobsList');
+    if (!res.jobs || !res.jobs.length) {
+      el.innerHTML = '<div class="empty-state"><p>Aucun job en cours.</p></div>';
+      return;
+    }
+    el.innerHTML = res.jobs.map(j => `
+      <div class="job-item" onclick="selectJob('${j.id}')">
+        <span class="badge badge-${j.status}">${j.status}</span>
+        <code style="color:var(--text);font-size:12px">${j.id}</code>
+        <span style="color:var(--text-muted);font-size:11px;margin-left:auto">${j.started}</span>
+      </div>
+    `).join('');
+  } catch(e) {}
 }
 
 async function selectJob(id) {
@@ -680,10 +873,7 @@ async function refreshJobLog() {
     const el = document.getElementById('jobLog');
     el.textContent = res.log || '(vide)';
     el.scrollTop = el.scrollHeight;
-    if (res.status !== 'running') {
-      stopPolling();
-      setStatus('Job ' + currentJobId + ': ' + res.status);
-    }
+    if (res.status !== 'running') { stopPolling(); setStatus('Job ' + currentJobId + ': ' + res.status); }
     refreshJobs();
   } catch (e) {}
 }
@@ -695,12 +885,17 @@ async function refreshOutputs() {
     const res = await api('GET', '/api/outputs' + q);
     const el = document.getElementById('outputFilesList');
     if (!res.files || !res.files.length) {
-      el.innerHTML = '<span style="color:var(--dim)">Aucun fichier.</span>';
+      el.innerHTML = '<div class="empty-state"><p>Aucun fichier de sortie.</p></div>';
       return;
     }
-    el.innerHTML = res.files.map(f =>
-      `<div style="padding:2px 0"><a href="/files/${encodeURIComponent(f)}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:12px">${escHtml(f)}</a></div>`
-    ).join('');
+    el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:6px">' +
+      res.files.map(f => `<a href="/files/${encodeURIComponent(f)}" target="_blank"
+        style="display:block;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:5px;
+        color:var(--text-secondary);text-decoration:none;font-size:11px;font-family:'JetBrains Mono',monospace;
+        transition:all 0.15s;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'"
+        >${escHtml(f)}</a>`).join('') + '</div>';
   } catch (e) {}
 }
 
@@ -711,61 +906,51 @@ async function detectPhases() {
   try {
     const res = await api('GET', '/api/outputs' + q);
     const sel = document.getElementById('metricsPhaseSelect');
-    sel.innerHTML = '<option value="">-- Choisir une phase --</option>';
+    sel.innerHTML = '<option value="">-- Choisir --</option>';
     if (res.files) {
       const phases = new Set();
-      res.files.forEach(f => {
-        const m = f.match(/phase_(\d+)/);
-        if (m) phases.add(parseInt(m[1]));
-      });
-      [...phases].sort((a, b) => a - b).forEach(p => {
+      res.files.forEach(f => { const m = f.match(/phase_(\d+)/); if (m) phases.add(parseInt(m[1])); });
+      [...phases].sort((a,b) => a-b).forEach(p => {
         if (p === 0) return;
         const opt = document.createElement('option');
         opt.value = p; opt.textContent = 'Phase ' + p;
         sel.appendChild(opt);
       });
     }
+    setStatus('Phases detectees');
   } catch (e) {}
 }
 
 async function loadMetrics() {
   const phase = document.getElementById('metricsPhaseSelect').value;
   if (!phase) return;
-
   const od = document.getElementById('simOutputDir').value.trim();
-  const baseDir = od || '';
-  // Try to read metrics from the output
   try {
-    const metricsPath = baseDir + '/phase_' + phase + '/metrics.json';
+    const metricsPath = (od || '') + '/phase_' + phase + '/metrics.json';
     const res = await api('GET', '/api/file?path=' + encodeURIComponent(metricsPath));
     if (res.error) {
-      document.getElementById('metricsGrid').innerHTML = '<p style="color:var(--red)">Fichier metriques introuvable pour cette phase.</p>';
+      document.getElementById('metricsGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p style="color:var(--red)">Metriques introuvables pour cette phase.</p></div>';
       return;
     }
-    const metrics = JSON.parse(res.content);
-    renderMetrics(metrics);
+    renderMetrics(JSON.parse(res.content));
   } catch (e) {
-    document.getElementById('metricsGrid').innerHTML = '<p style="color:var(--red)">Erreur: ' + e.message + '</p>';
+    document.getElementById('metricsGrid').innerHTML = '<div class="empty-state" style="grid-column:1/-1"><p style="color:var(--red)">Erreur: ' + e.message + '</p></div>';
   }
 }
 
 function renderMetrics(metrics) {
   const grid = document.getElementById('metricsGrid');
   grid.innerHTML = '';
-
   const colors = {
-    culture: '#4fc3f7',
-    mythologie: '#ce93d8',
-    valeurs_ethique: '#66bb6a',
-    gouvernance: '#ffa726',
-    economie: '#ef5350',
-    technique_infrastructure: '#78909c',
+    culture: '#6366f1', mythologie: '#a855f7',
+    valeurs_ethique: '#22c55e', gouvernance: '#f59e0b',
+    economie: '#ef4444', technique_infrastructure: '#06b6d4',
   };
 
   for (const [modId, mod] of Object.entries(metrics)) {
     const color = colors[modId] || '#888';
     const score = mod.score || 0;
-    const scoreColor = score > 0.6 ? 'var(--green)' : score > 0.3 ? 'var(--orange)' : 'var(--red)';
+    const pctScore = Math.round(score * 100);
 
     let indicatorsHtml = '';
     if (mod.metrics) {
@@ -773,18 +958,23 @@ function renderMetrics(metrics) {
         const pct = Math.round(val * 100);
         indicatorsHtml += `
           <div class="indicator-row">
-            <span class="label">${escHtml(ind)}</span>
+            <span class="label">${escHtml(ind.replace(/_/g, ' '))}</span>
             <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-            <span class="value">${val.toFixed(3)}</span>
+            <span class="value" style="color:${color}">${val.toFixed(3)}</span>
           </div>`;
       }
     }
 
     const card = document.createElement('div');
-    card.className = 'modality-card';
+    card.className = 'modality-card fade-in';
+    card.style.cssText = `--card-color:${color}`;
     card.innerHTML = `
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${color};border-radius:10px 10px 0 0"></div>
       <h3 style="color:${color}">${escHtml(mod.name || modId)}</h3>
-      <div class="score" style="color:${scoreColor}">${score.toFixed(3)}</div>
+      <div class="score-row">
+        <span class="score" style="color:${color}">${score.toFixed(3)}</span>
+        <span class="score-pct">${pctScore}%</span>
+      </div>
       ${indicatorsHtml}
     `;
     grid.appendChild(card);
@@ -794,58 +984,36 @@ function renderMetrics(metrics) {
 /* ===== Polling ===== */
 function startPolling() {
   stopPolling();
-  pollInterval = setInterval(() => {
-    refreshJobLog();
-    refreshOutputs();
-  }, 2000);
+  pollInterval = setInterval(() => { refreshJobLog(); refreshOutputs(); }, 2000);
 }
-
 function stopPolling() {
   if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
 }
 
 /* ===== Helpers ===== */
-function setStatus(msg) {
-  document.getElementById('statusBar').textContent = msg;
-}
-
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
+function setStatus(msg) { document.getElementById('statusBar').textContent = msg; }
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' K';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' M';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' K';
+  return (bytes / 1048576).toFixed(1) + ' M';
 }
-
 function fileIcon(name) {
-  if (name.endsWith('.py')) return '&#128013;';
-  if (name.endsWith('.json')) return '{ }';
-  if (name.endsWith('.md')) return '&#9998;';
-  if (name.endsWith('.txt')) return '&#128196;';
-  return '&#128196;';
+  if (name.endsWith('.py')) return '<span style="color:#3b82f6">py</span>';
+  if (name.endsWith('.json')) return '<span style="color:#f59e0b">{}</span>';
+  if (name.endsWith('.md')) return '<span style="color:#a855f7">md</span>';
+  if (name.endsWith('.txt')) return '<span style="color:#6b7280">tx</span>';
+  if (name.endsWith('.html')) return '<span style="color:#ef4444">&lt;&gt;</span>';
+  if (name.endsWith('.command') || name.endsWith('.sh')) return '<span style="color:#22c55e">sh</span>';
+  return '<span style="color:#6b7280">&#183;</span>';
 }
 
-function switchTabDirect(name) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.topbar-nav button').forEach(b => {
-    b.classList.remove('active');
-    if (b.textContent.toLowerCase().includes(name.substring(0, 4))) b.classList.add('active');
-  });
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-/* ===== Keyboard shortcuts ===== */
+/* ===== Keyboard ===== */
 document.addEventListener('keydown', (e) => {
-  // Ctrl+S save in editor
   if (e.ctrlKey && e.key === 's') {
     e.preventDefault();
-    if (document.getElementById('tab-editor').classList.contains('active')) {
-      saveFile();
-    }
+    if (document.getElementById('tab-editor').classList.contains('active')) saveFile();
   }
-  // Ctrl+` focus terminal
   if (e.ctrlKey && e.key === '`') {
     e.preventDefault();
     switchTabDirect('terminal');
@@ -855,7 +1023,6 @@ document.addEventListener('keydown', (e) => {
 
 /* ===== Init ===== */
 (async function init() {
-  // Detect project dir from first terminal exec
   try {
     const res = await api('POST', '/api/terminal/exec', { command: 'pwd' });
     if (res.cwd) {
@@ -868,7 +1035,6 @@ document.addEventListener('keydown', (e) => {
     projectDir = '/home/user/society';
     browseDir(projectDir);
   }
-
   refreshJobs();
   document.getElementById('termInput').focus();
 })();
