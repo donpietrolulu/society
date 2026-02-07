@@ -803,6 +803,8 @@ async function saveFile() {
 }
 
 /* ===== Simulation ===== */
+let currentOutputDir = '';
+
 async function startSimulation() {
   const body = {
     mock: document.getElementById('simMock').checked,
@@ -820,6 +822,10 @@ async function startSimulation() {
   setStatus('Lancement...');
   const res = await api('POST', '/api/simulate', body);
   currentJobId = res.job_id;
+  if (res.output_dir) {
+    currentOutputDir = res.output_dir;
+    document.getElementById('simOutputDir').value = res.output_dir;
+  }
   startPolling(); refreshJobs();
 }
 

@@ -23,8 +23,28 @@ _terminals_lock = threading.Lock()
 # Default paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(BASE_DIR)
-DEFAULT_OUTPUT_DIR = os.path.join(PROJECT_DIR, "experience", "Test1", "phases")
+EXPERIENCE_DIR = os.path.join(PROJECT_DIR, "experience")
 DEFAULT_DATA_DIR = os.path.join(BASE_DIR, "data")
+
+
+def _next_test_dir():
+    """Find next TestN directory number and return its phases path."""
+    os.makedirs(EXPERIENCE_DIR, exist_ok=True)
+    n = 1
+    while os.path.exists(os.path.join(EXPERIENCE_DIR, f"Test{n}")):
+        n += 1
+    return os.path.join(EXPERIENCE_DIR, f"Test{n}", "phases")
+
+
+def _clean_validation_files(output_dir):
+    """Remove old validation marker files before starting a new simulation."""
+    if not os.path.isdir(output_dir):
+        return
+    for fname in os.listdir(output_dir):
+        if fname.startswith("phase_") and fname.endswith("_ok"):
+            os.remove(os.path.join(output_dir, fname))
+        elif fname.startswith("validate_") and (fname.endswith(".token") or fname.endswith(".ok")):
+            os.remove(os.path.join(output_dir, fname))
 
 
 class TerminalSession:
@@ -188,7 +208,7 @@ class SimHandler(BaseHTTPRequestHandler):
             self._send_html("<h1>AGENCY Dashboard</h1><p>index.html introuvable</p>", 404)
 
     def _api_outputs(self, params):
-        output_dir = params.get("dir", [DEFAULT_OUTPUT_DIR])[0]
+        output_dir = params.get("dir", [EXPERIENCE_DIR])[0]
         if not os.path.isdir(output_dir):
             self._send_json({"files": [], "output_dir": output_dir})
             return
@@ -201,7 +221,8 @@ class SimHandler(BaseHTTPRequestHandler):
 
     def _api_jobs_list(self):
         with _jobs_lock:
-            jobs = [{"id": jid, "status": j["status"], "started": j["started"]}
+            jobs = [{"id": jid, "status": j["status"], "started": j["started"],
+                     "output_dir": j.get("output_dir", "")}
                     for jid, j in _jobs.items()]
         self._send_json({"jobs": sorted(jobs, key=lambda j: j["started"], reverse=True)})
 
@@ -217,10 +238,11 @@ class SimHandler(BaseHTTPRequestHandler):
             "started": job["started"],
             "log": job.get("log", ""),
             "return_code": job.get("return_code"),
+            "output_dir": job.get("output_dir", ""),
         })
 
     def _serve_file(self, name):
-        fpath = os.path.join(DEFAULT_OUTPUT_DIR, name)
+        fpath = os.path.join(EXPERIENCE_DIR, name)
         if not os.path.isfile(fpath):
             self.send_response(404)
             self.end_headers()
@@ -237,11 +259,18 @@ class SimHandler(BaseHTTPRequestHandler):
         body = self._read_body()
         config_path = body.get("config")
         seed = body.get("seed")
-        output_dir = body.get("output_dir", DEFAULT_OUTPUT_DIR)
         data_dir = body.get("data_dir", DEFAULT_DATA_DIR)
         mock = body.get("mock", False)
         no_llm = body.get("no_llm", False)
         phase_start = body.get("phase_start", 1)
+
+        # Auto-increment output dir if not specified
+        output_dir = body.get("output_dir", "").strip()
+        if not output_dir:
+            output_dir = _next_test_dir()
+
+        # Clean old validation files to prevent auto-skip
+        _clean_validation_files(output_dir)
 
         job_id = str(uuid.uuid4())[:8]
         with _jobs_lock:
@@ -250,9 +279,10 @@ class SimHandler(BaseHTTPRequestHandler):
                 "started": time.strftime("%Y-%m-%d %H:%M:%S"),
                 "log": "",
                 "return_code": None,
+                "output_dir": output_dir,
             }
 
-        cmd = [sys.executable, "-m", "system.sim", "run",
+        cmd = [sys.executable, "-u", "-m", "system.sim", "run",
                "--output-dir", output_dir,
                "--data-dir", data_dir,
                "--phase-start", str(phase_start)]
@@ -268,6 +298,7 @@ class SimHandler(BaseHTTPRequestHandler):
         env = dict(os.environ)
         env["SIM_VALIDATE_MODE"] = "file"
         env["SIM_VALIDATE_DIR"] = output_dir
+        env["PYTHONUNBUFFERED"] = "1"
 
         def run_job():
             try:
@@ -275,20 +306,21 @@ class SimHandler(BaseHTTPRequestHandler):
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
+                    stdin=subprocess.DEVNULL,
                     cwd=PROJECT_DIR,
                     env=env,
                     text=True,
                 )
-                output = []
+                log_lines = []
                 for line in proc.stdout:
-                    output.append(line)
+                    log_lines.append(line)
                     with _jobs_lock:
-                        _jobs[job_id]["log"] = "".join(output)
+                        _jobs[job_id]["log"] = "".join(log_lines)
                 proc.wait()
                 with _jobs_lock:
                     _jobs[job_id]["status"] = "completed" if proc.returncode == 0 else "failed"
                     _jobs[job_id]["return_code"] = proc.returncode
-                    _jobs[job_id]["log"] = "".join(output)
+                    _jobs[job_id]["log"] = "".join(log_lines)
             except Exception as e:
                 with _jobs_lock:
                     _jobs[job_id]["status"] = "failed"
@@ -297,7 +329,7 @@ class SimHandler(BaseHTTPRequestHandler):
         t = threading.Thread(target=run_job, daemon=True)
         t.start()
 
-        self._send_json({"job_id": job_id, "status": "running"})
+        self._send_json({"job_id": job_id, "status": "running", "output_dir": output_dir})
 
     def _api_test(self):
         job_id = f"test-{uuid.uuid4().hex[:6]}"
@@ -340,15 +372,28 @@ class SimHandler(BaseHTTPRequestHandler):
     def _api_validate(self):
         body = self._read_body()
         phase = body.get("phase")
-        output_dir = body.get("output_dir", DEFAULT_OUTPUT_DIR)
+        output_dir = body.get("output_dir", "").strip()
+
+        # If no output_dir specified, find it from the latest running job
+        if not output_dir:
+            with _jobs_lock:
+                for jid, j in sorted(_jobs.items(), key=lambda x: x[1]["started"], reverse=True):
+                    if j.get("output_dir"):
+                        output_dir = j["output_dir"]
+                        break
+
+        if not output_dir:
+            self._send_json({"error": "output_dir requis (aucun job actif)"}, 400)
+            return
         if phase is None:
             self._send_json({"error": "phase requise"}, 400)
             return
+
         os.makedirs(output_dir, exist_ok=True)
         ok_path = os.path.join(output_dir, f"phase_{phase}_ok")
         with open(ok_path, "w") as f:
             f.write("ok")
-        self._send_json({"validated": phase})
+        self._send_json({"validated": phase, "output_dir": output_dir})
 
     # --- Terminal API ---
 
