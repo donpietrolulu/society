@@ -165,6 +165,7 @@ class SimHandler(BaseHTTPRequestHandler):
         mock = body.get("mock", False)
         no_llm = body.get("no_llm", False)
         phase_start = body.get("phase_start", 1)
+        societe_cursor = body.get("societe_cursor")
 
         job_id = str(uuid.uuid4())[:8]
         with _jobs_lock:
@@ -188,6 +189,8 @@ class SimHandler(BaseHTTPRequestHandler):
             cmd.append("--mock")
         if no_llm:
             cmd.append("--no-llm")
+        if societe_cursor is not None:
+            cmd.extend(["--societe-cursor", str(float(societe_cursor))])
 
         # Set env for file-based validation
         env = dict(os.environ)

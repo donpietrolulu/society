@@ -70,6 +70,16 @@
         <label><input type="checkbox" id="noLlm"> No-LLM</label>
       </div>
     </div>
+    <div style="margin-top:10px">
+      <label>Curseur de société : <strong id="cursorLabel">0.00</strong></label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <span style="font-size:0.75em;color:#4fc3f7">Agents</span>
+        <input type="range" id="societeCursor" min="0" max="1" step="0.05" value="0"
+               style="flex:1;accent-color:#81c784"
+               oninput="document.getElementById('cursorLabel').textContent = parseFloat(this.value).toFixed(2)">
+        <span style="font-size:0.75em;color:#e57373">Humains</span>
+      </div>
+    </div>
     <div style="margin-top:12px">
       <button onclick="startSim()">Lancer la simulation</button>
       <button class="secondary" onclick="runTests()">Lancer les tests</button>
@@ -119,6 +129,7 @@ async function startSim() {
     mock: document.getElementById('mock').checked,
     no_llm: document.getElementById('noLlm').checked,
     phase_start: parseInt(document.getElementById('phaseStart').value) || 1,
+    societe_cursor: parseFloat(document.getElementById('societeCursor').value) || 0,
   };
   const cfg = document.getElementById('config').value.trim();
   if (cfg) body.config = cfg;
