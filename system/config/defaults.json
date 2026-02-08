@@ -29,5 +29,6 @@
     "max_completion_tokens": 700,
     "model": "gpt-5.2"
   },
-  "language": "fr"
+  "language": "fr",
+  "societe_cursor": 0.85
 }

@@ -3,18 +3,35 @@ import copy
 
 
 class Individual:
-    """An agent with numeric traits."""
+    """An agent with numeric traits, persona, relationships, and faction."""
 
-    def __init__(self, id: int, traits: dict = None):
+    def __init__(self, id: int, traits: dict = None, persona: dict = None,
+                 relationships: dict = None, faction: str = None):
         self.id = id
         self.traits = traits or {}
+        self.persona = persona or {}
+        self.relationships = relationships or {}
+        self.faction = faction
 
     def to_dict(self):
-        return {"id": self.id, "traits": dict(self.traits)}
+        d = {"id": self.id, "traits": dict(self.traits)}
+        if self.persona:
+            d["persona"] = dict(self.persona)
+        if self.relationships:
+            d["relationships"] = dict(self.relationships)
+        if self.faction:
+            d["faction"] = self.faction
+        return d
 
     @classmethod
     def from_dict(cls, d):
-        return cls(id=d["id"], traits=dict(d["traits"]))
+        return cls(
+            id=d["id"],
+            traits=dict(d["traits"]),
+            persona=dict(d.get("persona", {})),
+            relationships=dict(d.get("relationships", {})),
+            faction=d.get("faction"),
+        )
 
 
 class ModalityState:
@@ -101,3 +118,31 @@ class PhaseResult:
             "scenes": self.scenes,
             "checks": self.checks,
         }
+
+
+class Artifact:
+    """A cultural, mythological, ethical, governance, economic, or technical artifact."""
+
+    def __init__(self, id: str, modality: str, title: str, description: str,
+                 tags: list = None):
+        self.id = id
+        self.modality = modality
+        self.title = title
+        self.description = description
+        self.tags = tags or []
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "modality": self.modality,
+            "title": self.title,
+            "description": self.description,
+            "tags": self.tags,
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            id=d["id"], modality=d["modality"], title=d["title"],
+            description=d["description"], tags=d.get("tags", []),
+        )

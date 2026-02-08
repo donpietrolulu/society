@@ -13,6 +13,15 @@ from system.sim.constants import (
 from system.sim.llm import generate_narrative
 from system.sim.output import write_phase_outputs, write_state
 from system.sim.validation import wait_for_validation
+from system.sim.factions import generate_factions, assign_factions
+from system.sim.cast import select_focus_cast, render_cast_md
+from system.sim.artifacts import generate_phase_artifacts, render_artifacts_md
+from system.sim.drama import choose_major_beat, generate_scenes, generate_chronique
+from system.sim.interconnectivity import (
+    compute_influence_contributions, compute_phase_modality_deltas,
+    render_societe_interactions_md,
+)
+from system.sim.logger import make_event, write_events
 
 
 def clamp(v, lo=0.0, hi=1.0):
@@ -277,6 +286,9 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
     per_phase_traits = config.get("traits", {}).get("per_phase", {})
     update_steps = config.get("individual_update_steps_per_phase", 3)
 
+    # Track previous modality scores for deltas
+    prev_mod_scores = {m: modalities[m].score for m in ordered_mods}
+
     for phase in range(phase_start, phases_count + 1):
         print_fn(f"\n=== Phase {phase}/{phases_count} ===")
 
@@ -324,6 +336,73 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
         # Update modalities
         _update_modalities(modalities, ordered_mods, matrix, individuals, global_state, rng)
 
+        # Compute modality deltas
+        current_mod_scores = {m: modalities[m].score for m in ordered_mods}
+        deltas = {m: current_mod_scores[m] - prev_mod_scores.get(m, 0) for m in ordered_mods}
+        prev_mod_scores = dict(current_mod_scores)
+
+        # --- Drama pack generation ---
+        societe_cursor = config.get("societe_cursor", 0.85)
+        phase_dir = os.path.join(output_dir, f"phase_{phase}")
+        all_events = []
+
+        # Factions
+        factions = generate_factions(phase, rng)
+        assign_factions(individuals, factions, modalities, rng)
+
+        # Cast
+        cast = select_focus_cast(individuals, phase, modalities, factions, rng, k=5)
+
+        # Artifacts
+        artifacts = generate_phase_artifacts(phase, modalities, factions, cast, rng)
+
+        # Major beat
+        beat = choose_major_beat(phase, modalities, deltas, factions, cast, rng)
+        all_events.extend(beat.get("events", []))
+
+        # Scenes
+        scenes_text, scene_events = generate_scenes(phase, beat, cast, factions, artifacts, rng, count=5)
+        all_events.extend(scene_events)
+
+        # Log artifact creation events
+        for art in artifacts:
+            all_events.append(make_event(
+                phase=phase, tick=0, event_type="artifact_created",
+                text=f"Artefact créé : {art.title} ({art.id})",
+                modalities=[art.modality],
+                meta=art.to_dict(),
+            ))
+
+        # Log faction events
+        for f in factions:
+            all_events.append(make_event(
+                phase=phase, tick=0, event_type="faction_active",
+                text=f"Faction active : {f['name']} — {f['motto']}",
+                modalities=[f["obsession"]],
+                meta={"faction": f["name"], "obsession": f["obsession"]},
+            ))
+
+        # Interconnectivity
+        mod_scores_dict = {m: modalities[m].score for m in ordered_mods}
+        contributions = compute_influence_contributions(mod_scores_dict, matrix, ordered_mods)
+        interactions_md = render_societe_interactions_md(phase, modalities, deltas, contributions, ordered_mods)
+
+        # Chronique
+        chronique_md = generate_chronique(phase, beat, scenes_text, cast, factions, artifacts, modalities, rng)
+
+        # Cast and artifacts markdown
+        cast_md = render_cast_md(phase, cast)
+        artifacts_md = render_artifacts_md(phase, artifacts)
+
+        # Build drama pack for narrative context
+        drama_pack = {
+            "beat": beat,
+            "factions": factions,
+            "cast": cast,
+            "artifacts": [a.to_dict() for a in artifacts],
+            "scenes": scenes_text,
+        }
+
         # Collect context
         phase_doc = load_phase_doc(config, base_dir, phase)
         interaction_samples = sample_interactions(individuals, rng, count=5)
@@ -339,6 +418,7 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
             "motifs": motifs,
             "phase_doc": phase_doc,
             "history": history,
+            "drama_pack": drama_pack,
         }
 
         # Generate narrative
@@ -372,6 +452,12 @@ def run_simulation(config, seed=None, output_dir=None, data_dir=None,
             interactions=interaction_samples,
             modalities_detail=modalities,
             ordered_mods=ordered_mods,
+            drama_pack=drama_pack,
+            chronique_md=chronique_md,
+            interactions_md=interactions_md,
+            cast_md=cast_md,
+            artifacts_md=artifacts_md,
+            events=all_events,
         )
 
         print_fn(f"Phase {phase} terminée. Fichiers écrits dans {output_dir}")

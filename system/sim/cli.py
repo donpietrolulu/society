@@ -27,6 +27,8 @@ def main(argv=None):
                             help="Mode sans LLM (narratif simplifié)")
     run_parser.add_argument("--phase-start", type=int, default=1,
                             help="Phase de départ (charge l'état précédent si > 1)")
+    run_parser.add_argument("--societe-cursor", type=float, default=None,
+                            help="Curseur narratif société [0.0, 1.0]. 0.85 = rendu riche.")
 
     args = parser.parse_args(argv)
 
@@ -35,6 +37,10 @@ def main(argv=None):
         sys.exit(1)
 
     config = load_config(args.config)
+
+    # Apply societe-cursor override
+    if args.societe_cursor is not None:
+        config["societe_cursor"] = args.societe_cursor
 
     run_simulation(
         config=config,
