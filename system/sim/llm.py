@@ -62,9 +62,7 @@ def generate_narrative(config, context, docs, mock=False, no_llm=False):
     try:
         cmd = [
             "claude", "-p", prompt,
-            "--model", model,
-            "--max-tokens", str(max_tokens),
-            "--output-format", "text",
+            "--output-format", "json",
         ]
         result = subprocess.run(
             cmd,
