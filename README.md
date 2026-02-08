@@ -19,7 +19,7 @@ experience/     # Dossier de sortie par défaut
 
 Python 3.8+ avec la bibliothèque standard uniquement. `certifi` optionnel pour les appels HTTPS.
 
-Les appels LLM utilisent l'API Chat Completions via `urllib.request` (clé `OPENAI_API_KEY`).
+Les appels LLM utilisent Claude Code CLI (`claude -p`) — aucune clé API à configurer.
 
 ## Utilisation
 
@@ -29,12 +29,13 @@ Les appels LLM utilisent l'API Chat Completions via `urllib.request` (clé `OPEN
 python -m system.sim run --mock --seed 42
 ```
 
-### Lancer avec LLM
+### Lancer avec LLM (via Claude Code)
 
 ```bash
-export OPENAI_API_KEY=sk-...
 python -m system.sim run --seed 42
 ```
+
+> Nécessite que `claude` soit installé et authentifié (`claude auth login`).
 
 ### Options CLI
 
