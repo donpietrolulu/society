@@ -44,9 +44,9 @@ def generate_narrative(config, context, docs, mock=False, no_llm=False):
     if no_llm:
         return _simple_narrative(context)
 
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+    api_key = os.environ.get("LLM_API_KEY", "") or os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
-        print("OPENAI_API_KEY non définie, utilisation du mode simple.")
+        print("Aucune clé API définie (LLM_API_KEY), utilisation du mode simple.")
         return _simple_narrative(context)
 
     model = os.environ.get("OPENAI_MODEL_MAIN",
