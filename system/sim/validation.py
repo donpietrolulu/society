@@ -24,15 +24,12 @@ def wait_for_validation(phase, output_dir, print_fn=None):
 
 def _wait_cli_validation(phase, print_fn):
     """Wait for CLI input."""
-    while True:
-        print_fn(f"Phase {phase} terminée. Tape 'ok' pour continuer:")
-        try:
-            response = input().strip().lower()
-            if response == "ok":
-                return
-        except EOFError:
-            # Non-interactive mode, auto-validate
-            return
+    print_fn(f"Phase {phase} terminée. Appuie sur Entrée pour continuer...")
+    try:
+        input()
+    except EOFError:
+        # Non-interactive mode, auto-validate
+        pass
 
 
 def _wait_file_validation(phase, output_dir, print_fn):
